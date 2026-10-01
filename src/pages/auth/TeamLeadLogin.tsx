@@ -9,18 +9,37 @@ const TeamLeadLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const STATIC_EMAIL = "teamlead@example.com";
-  const STATIC_PASSWORD = "teamlead123";
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === STATIC_EMAIL && password === STATIC_PASSWORD) {
-      setToken("teamlead", "static-teamlead-token");
-      alert("Team Lead login successful ✅");
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/teamleads/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Save role + token using your existing helper
+      setToken("teamlead", data.token);
+
+      // Optional: persist user info
+      localStorage.setItem("teamlead_user", JSON.stringify(data.user));
+
+      alert(`Welcome, ${data.user.name} ✅`);
       navigate("/teamlead/dashboard");
-    } else {
-      alert("Invalid credentials ❌");
+    } catch (err: any) {
+      alert(err.message || "Invalid credentials ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,17 +101,14 @@ const TeamLeadLogin = () => {
 
           <button
             type="submit"
-            className="w-full inline-flex justify-center items-center bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 text-white shadow-lg hover:scale-105 transition py-2 rounded-lg font-semibold"
+            disabled={loading}
+            className="w-full inline-flex justify-center items-center bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 text-white shadow-lg hover:scale-105 transition py-2 rounded-lg font-semibold disabled:opacity-60 disabled:hover:scale-100"
           >
-            Login
+            {loading ? "Signing in…" : "Login"}
           </button>
         </form>
 
-        <div className="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-gray-600">
-          <p className="font-semibold mb-1 text-yellow-800">Demo Credentials:</p>
-          <p>Email: <span className="font-mono">teamlead@example.com</span></p>
-          <p>Password: <span className="font-mono">teamlead123</span></p>
-        </div>
+        {/* Demo credentials box removed */}
       </div>
     </div>
   );

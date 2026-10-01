@@ -1,14 +1,69 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
-import { mockTeamLeads } from "@/data/mockData";
+
+type TeamLead = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  status: string;
+  created_at: string;
+};
 
 const ManageTeamLeads = () => {
-  const handleDelete = (id: string) => {
-    if (confirm("Delete this team lead?")) {
-      alert("Delete API to be wired. ID: " + id);
+  const [teamLeads, setTeamLeads] = useState<TeamLead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ---------- Fetch team leads ----------
+  const fetchTeamLeads = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await fetch("http://localhost:5000/api/teamleads");
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to load team leads");
+      }
+
+      setTeamLeads(data.data || []);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchTeamLeads();
+  }, []);
+
+  // ---------- Delete ----------
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this team lead?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/teamleads/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to delete team lead");
+      }
+
+      // remove locally without refetching
+      setTeamLeads((prev) => prev.filter((tl) => tl.id !== id));
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // ---------- UI ----------
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -22,50 +77,70 @@ const ManageTeamLeads = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600 text-left">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockTeamLeads.map((tl) => (
-              <tr key={tl._id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{tl.name}</td>
-                <td className="px-4 py-3">{tl.email}</td>
-                <td className="px-4 py-3">{tl.phone}</td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <Link
-                      to={`/admin/teamleads/${tl._id}`}
-                      className="p-2 rounded hover:bg-blue-50 text-blue-600"
-                      title="View"
-                    >
-                      <Eye size={16} />
-                    </Link>
-                    <Link
-                      to={`/admin/teamleads/edit/${tl._id}`}
-                      className="p-2 rounded hover:bg-yellow-50 text-yellow-600"
-                      title="Edit"
-                    >
-                      <Edit size={16} />
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(tl._id)}
-                      className="p-2 rounded hover:bg-red-50 text-red-600"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">
+            Loading team leads…
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center text-red-600">
+            {error}
+            <button
+              onClick={fetchTeamLeads}
+              className="ml-3 underline text-[#0c2d67]"
+            >
+              Retry
+            </button>
+          </div>
+        ) : teamLeads.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            No team leads found. Click “Create Team Lead” to add one.
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-gray-600 text-left">
+              <tr>
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Phone</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {teamLeads.map((tl) => (
+                <tr key={tl.id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium">{tl.name}</td>
+                  <td className="px-4 py-3">{tl.email}</td>
+                  <td className="px-4 py-3">{tl.phone || "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <Link
+                        to={`/admin/teamleads/${tl.id}`}
+                        className="p-2 rounded hover:bg-blue-50 text-blue-600"
+                        title="View"
+                      >
+                        <Eye size={16} />
+                      </Link>
+                      <Link
+                        to={`/admin/teamleads/edit/${tl.id}`}
+                        className="p-2 rounded hover:bg-yellow-50 text-yellow-600"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(tl.id)}
+                        className="p-2 rounded hover:bg-red-50 text-red-600"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 const CreateTeamLead = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -14,11 +15,29 @@ const CreateTeamLead = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: POST /api/admin/teamleads
-    alert("Team lead created ✅ (static)");
-    navigate("/admin/teamleads");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/teamleads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form), // role forced on backend
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to create team lead");
+      }
+
+      alert("Team lead created ✅");
+      navigate("/admin/teamleads");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,10 +62,17 @@ const CreateTeamLead = () => {
             </label>
             <input
               name={field}
-              type={field === "password" ? "password" : field === "email" ? "email" : "text"}
+              type={
+                field === "password"
+                  ? "password"
+                  : field === "email"
+                  ? "email"
+                  : "text"
+              }
               value={form[field]}
               onChange={handleChange}
               required={field !== "phone"}
+              minLength={field === "password" ? 6 : undefined}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67]"
               placeholder={`Enter ${field}`}
             />
@@ -56,9 +82,10 @@ const CreateTeamLead = () => {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="bg-[#0c2d67] text-white px-6 py-2 rounded-lg hover:bg-[#0a2450]"
+            disabled={loading}
+            className="bg-[#0c2d67] text-white px-6 py-2 rounded-lg hover:bg-[#0a2450] disabled:opacity-60"
           >
-            Create Team Lead
+            {loading ? "Creating…" : "Create Team Lead"}
           </button>
           <button
             type="button"

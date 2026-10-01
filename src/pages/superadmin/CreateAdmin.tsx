@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 const CreateAdmin = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -14,12 +15,39 @@ const CreateAdmin = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: POST /api/superadmin/admins
-    alert("Admin created ✅ (static)");
-    navigate("/superadmin/admins");
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+
+  const payload = {
+    name: form.name,
+    email: form.email,
+    phone: form.phone,
+    password: form.password,
+    role: "admin", // 👈 explicitly set here
   };
+
+  try {
+    const res = await fetch("http://localhost:5000/api/admins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Failed to create admin");
+    }
+
+    alert("Admin created ✅");
+    navigate("/superadmin/admins");
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -80,6 +108,7 @@ const CreateAdmin = () => {
             value={form.password}
             onChange={handleChange}
             required
+            minLength={6}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67]"
             placeholder="Min 6 characters"
           />
@@ -88,9 +117,10 @@ const CreateAdmin = () => {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="bg-[#0c2d67] text-white px-6 py-2 rounded-lg hover:bg-[#0a2450] transition"
+            disabled={loading}
+            className="bg-[#0c2d67] text-white px-6 py-2 rounded-lg hover:bg-[#0a2450] transition disabled:opacity-60"
           >
-            Create Admin
+            {loading ? "Creating..." : "Create Admin"}
           </button>
           <button
             type="button"
