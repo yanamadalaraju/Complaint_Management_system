@@ -1,11 +1,18 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Ticket, CheckCircle, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Ticket,
+  CheckCircle,
+  LogOut,
+  FolderKanban,
+} from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
 
 const menu = [
   { label: "Dashboard", path: "/teamlead/dashboard", icon: LayoutDashboard },
   { label: "Assigned Tickets", path: "/teamlead/tickets", icon: Ticket },
+  { label: "Assigned Projects", path: "/teamlead/projects", icon: FolderKanban },
   { label: "Resolved History", path: "/teamlead/resolved", icon: CheckCircle },
 ];
 
@@ -59,7 +66,9 @@ const TeamLeadLayout = () => {
 
       <main className="flex-1 flex flex-col">
         <header className="bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h1 className="text-lg font-semibold text-[#0c2d67]">Team Lead Panel</h1>
+          <h1 className="text-lg font-semibold text-[#0c2d67]">
+            Team Lead Panel
+          </h1>
           <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
             TL
           </div>

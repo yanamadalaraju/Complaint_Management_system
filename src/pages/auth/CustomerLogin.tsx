@@ -9,18 +9,37 @@ const CustomerLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const STATIC_EMAIL = "customer@example.com";
-  const STATIC_PASSWORD = "customer123";
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === STATIC_EMAIL && password === STATIC_PASSWORD) {
-      setToken("customer", "static-customer-token");
-      alert("Customer login successful ✅");
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/customers/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Save role + token using your existing helper
+      setToken("customer", data.token);
+
+      // Persist user info for greeting and notifications
+      localStorage.setItem("customer_user", JSON.stringify(data.user));
+
+      alert(`Welcome, ${data.user.name} ✅`);
       navigate("/customer/dashboard");
-    } else {
-      alert("Invalid credentials ❌");
+    } catch (err: any) {
+      alert(err.message || "Invalid credentials ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,7 +49,9 @@ const CustomerLogin = () => {
         <div className="flex flex-col items-center mb-6">
           <img src={logo} alt="Logo" className="w-32 h-32 object-contain mb-2" />
           <h2 className="text-2xl font-bold text-[#0c2d67]">Customer Login</h2>
-          <p className="text-gray-500 text-sm">Sign in to raise and track tickets</p>
+          <p className="text-gray-500 text-sm">
+            Sign in to raise and track tickets
+          </p>
         </div>
 
         <form className="space-y-5" onSubmit={handleLogin}>
@@ -75,31 +96,32 @@ const CustomerLogin = () => {
             <label className="flex items-center gap-2">
               <input type="checkbox" /> Remember me
             </label>
-            <a href="/forgot-password" className="text-[#0c2d67] hover:underline">
+            <a
+              href="/forgot-password"
+              className="text-[#0c2d67] hover:underline"
+            >
               Forgot password?
             </a>
           </div>
 
           <button
             type="submit"
-            className="w-full inline-flex justify-center items-center bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 text-white shadow-lg hover:scale-105 transition py-2 rounded-lg font-semibold"
+            disabled={loading}
+            className="w-full inline-flex justify-center items-center bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 text-white shadow-lg hover:scale-105 transition py-2 rounded-lg font-semibold disabled:opacity-60 disabled:hover:scale-100"
           >
-            Login
+            {loading ? "Signing in…" : "Login"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600">
           New customer?{" "}
-          <Link to="/customer/signup" className="text-[#0c2d67] font-semibold hover:underline">
+          <Link
+            to="/customer/signup"
+            className="text-[#0c2d67] font-semibold hover:underline"
+          >
             Create an account
           </Link>
         </p>
-
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-gray-600">
-          <p className="font-semibold mb-1 text-yellow-800">Demo Credentials:</p>
-          <p>Email: <span className="font-mono">customer@example.com</span></p>
-          <p>Password: <span className="font-mono">customer123</span></p>
-        </div>
       </div>
     </div>
   );

@@ -6,6 +6,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  FolderKanban,
+  UserCheck,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
@@ -13,6 +15,8 @@ import logo from "@/assets/logo.jpeg";
 const menu = [
   { label: "Dashboard", path: "/superadmin/dashboard", icon: LayoutDashboard },
   { label: "Manage Admins", path: "/superadmin/admins", icon: Users },
+  { label: "Manage Project", path: "/superadmin/projects", icon: FolderKanban },
+  { label: "Manage Customer", path: "/superadmin/customers", icon: UserCheck },
   { label: "All Tickets", path: "/superadmin/tickets", icon: Ticket },
   { label: "Reports", path: "/superadmin/reports", icon: BarChart3 },
   { label: "Settings", path: "/superadmin/settings", icon: Settings },

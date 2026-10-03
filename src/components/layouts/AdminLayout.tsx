@@ -5,6 +5,7 @@ import {
   Users,
   Bell,
   LogOut,
+  FolderKanban,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
@@ -12,6 +13,7 @@ import logo from "@/assets/logo.jpeg";
 const menu = [
   { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
   { label: "All Tickets", path: "/admin/tickets", icon: Ticket },
+  { label: "All Projects", path: "/admin/projects", icon: FolderKanban },
   { label: "Team Leads", path: "/admin/teamleads", icon: Users },
   { label: "Notifications", path: "/admin/notifications", icon: Bell },
 ];
