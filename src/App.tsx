@@ -47,6 +47,7 @@ import TeamLeadDetails from "@/pages/admin/TeamLeadDetails";
 import AdminNotifications from "@/pages/admin/Notifications";
 import AllProjects from "@/pages/admin/AllProjects";
 import AdminProjectDetails from "@/pages/admin/ProjectDetails";
+import AssignProject from "./pages/admin/AssignProject";
 
 // Team Lead
 import TLDashboard from "@/pages/teamlead/Dashboard";
@@ -56,7 +57,7 @@ import ResolveTicket from "@/pages/teamlead/ResolveTicket";
 import ResolvedHistory from "@/pages/teamlead/ResolvedHistory";
 import LeadProjectDetails from "@/pages/teamlead/ProjectDetails";
 import AssignProjectMembers from "@/pages/teamlead/ProjectResolveTicket";
-
+import Projects from "./pages/teamlead/Projects";
 
 // Customer
 import CDashboard from "@/pages/customer/Dashboard";
@@ -64,13 +65,13 @@ import RaiseTicket from "@/pages/customer/RaiseTicket";
 import MyTickets from "@/pages/customer/MyTickets";
 import CTicketDetails from "@/pages/customer/TicketDetails";
 import CustomerNotifications from "@/pages/customer/Notifications";
+import MyProjects from "./pages/customer/MyProjects";
+import CustomerProjectDetails from "./pages/customer/ProjectDetails"; // 👈 NEW
 
 // Common
 import Home from "@/pages/common/Home";
 import NotFound from "@/pages/common/NotFound";
 import Unauthorized from "@/pages/common/Unauthorized";
-import AssignProject from "./pages/admin/AssignProject";
-import Projects from "./pages/teamlead/Projects";
 
 const queryClient = new QueryClient();
 
@@ -162,13 +163,13 @@ const App = () => (
                 path="/admin/tickets/:id/assign"
                 element={<AssignTicket />}
               />
-              <Route
-               path="/admin/projects/:id/assign"
-               element={<AssignProject />}
-              />
 
-              {/* Projects (admin-scoped) */}
+              {/* Projects */}
               <Route path="/admin/projects" element={<AllProjects />} />
+              <Route
+                path="/admin/projects/:id/assign"
+                element={<AssignProject />}
+              />
               <Route
                 path="/admin/projects/:id"
                 element={<AdminProjectDetails />}
@@ -188,7 +189,6 @@ const App = () => (
                 path="/admin/teamleads/:id"
                 element={<TeamLeadDetails />}
               />
-              
 
               {/* Notifications */}
               <Route
@@ -212,12 +212,12 @@ const App = () => (
                 element={<ResolveTicket />}
               />
               <Route path="/teamlead/resolved" element={<ResolvedHistory />} />
-               <Route
-               path="/teamlead/projects"
-               element={<Projects />}
-              />
 
-              <Route path="/teamlead/projects/:id" element={<LeadProjectDetails />} />
+              <Route path="/teamlead/projects" element={<Projects />} />
+              <Route
+                path="/teamlead/projects/:id"
+                element={<LeadProjectDetails />}
+              />
               <Route
                 path="/teamlead/projects/:id/assign"
                 element={<AssignProjectMembers />}
@@ -238,6 +238,14 @@ const App = () => (
                 path="/customer/tickets/:id"
                 element={<CTicketDetails />}
               />
+
+              {/* Projects */}
+              <Route path="/customer/projects" element={<MyProjects />} />
+              <Route
+                path="/customer/projects/:id"
+                element={<CustomerProjectDetails />}
+              />
+
               <Route
                 path="/customer/notifications"
                 element={<CustomerNotifications />}

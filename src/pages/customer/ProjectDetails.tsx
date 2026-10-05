@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  CheckCircle,
-  MessageSquare,
-  Clock,
-} from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 
 type Project = {
   id: number;
@@ -16,10 +11,10 @@ type Project = {
   customer_id: number | null;
   admin_id: number | null;
   teamlead_id: number | null;
-  status: string;                     // 👈 new
-  progress_notes: string | null;      // 👈 new
+  status: string;
+  progress_notes: string | null;
   customer_response: string | null;   // 👈 new
-  customer_status: string;            // 👈 new
+  customer_status: string | null;     // 👈 new
   created_at: string;
   updated_at: string;
   customer_name: string | null;
@@ -28,6 +23,36 @@ type Project = {
   admin_email: string | null;
   teamlead_name: string | null;
   teamlead_email: string | null;
+};
+
+// ---------- Status pill ----------
+const statusColor = (status: string) => {
+  switch (status) {
+    case "ASSIGNED":
+      return "bg-blue-100 text-blue-700";
+    case "IN_PROGRESS":
+      return "bg-purple-100 text-purple-700";
+    case "COMPLETED":
+      return "bg-green-100 text-green-700";
+    case "ON_HOLD":
+      return "bg-yellow-100 text-yellow-700";
+    case "CLOSED":
+      return "bg-gray-200 text-gray-700";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};
+
+// ---------- Customer status pill (new) ----------
+const customerStatusColor = (status: string | null) => {
+  switch (status) {
+    case "RESOLVED":
+      return "bg-green-100 text-green-700";
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-700";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
 };
 
 const formatDate = (d: string | null) => {
@@ -56,40 +81,6 @@ const formatDateTime = (d: string | null) => {
       });
 };
 
-// ---------- Status pill colors ----------
-const projectStatusColor = (status: string) => {
-  switch (status) {
-    case "ASSIGNED":
-      return "bg-blue-100 text-blue-700";
-    case "IN_PROGRESS":
-      return "bg-purple-100 text-purple-700";
-    case "COMPLETED":
-      return "bg-green-100 text-green-700";
-    case "ON_HOLD":
-      return "bg-yellow-100 text-yellow-700";
-    case "CLOSED":
-      return "bg-gray-200 text-gray-700";
-    default:
-      return "bg-gray-100 text-gray-600";
-  }
-};
-
-const customerStatusColor = (status: string) => {
-  switch (status) {
-    case "PENDING":
-      return "bg-yellow-100 text-yellow-700";
-    case "ACCEPTED":
-    case "RESOLVED":
-      return "bg-green-100 text-green-700";
-    case "REJECTED":
-      return "bg-red-100 text-red-700";
-    case "REVISION_REQUESTED":
-      return "bg-orange-100 text-orange-700";
-    default:
-      return "bg-gray-100 text-gray-600";
-  }
-};
-
 const Field = ({
   label,
   value,
@@ -107,12 +98,17 @@ const Field = ({
   </div>
 );
 
-const ProjectDetails = () => {
+const CustomerProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Customer response state
+  const [response, setResponse] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // ---------- Fetch project by id ----------
   useEffect(() => {
@@ -121,17 +117,15 @@ const ProjectDetails = () => {
         setLoading(true);
         setError(null);
 
-        // Read logged-in teamlead
-        const stored = localStorage.getItem("teamlead_user");
-        const teamlead = stored ? JSON.parse(stored) : null;
+        const stored = localStorage.getItem("customer_user");
+        const customer = stored ? JSON.parse(stored) : null;
 
-        if (!teamlead?.id) {
-          throw new Error("You are not logged in as a team lead.");
+        if (!customer?.id) {
+          throw new Error("You are not logged in as a customer.");
         }
 
         let found: Project | null = null;
 
-        // 1) Try single-project endpoint
         try {
           const res = await fetch(`http://localhost:5000/api/projects/${id}`);
           const data = await res.json();
@@ -142,7 +136,6 @@ const ProjectDetails = () => {
           // fall through to list fallback
         }
 
-        // 2) Fallback: fetch list and find by id
         if (!found) {
           const res = await fetch("http://localhost:5000/api/projects");
           const data = await res.json();
@@ -161,12 +154,13 @@ const ProjectDetails = () => {
           throw new Error("Project not found.");
         }
 
-        // Only the assigned team lead can view this project
-        if (Number(found.teamlead_id) !== Number(teamlead.id)) {
-          throw new Error("This project is not assigned to you.");
+        if (Number(found.customer_id) !== Number(customer.id)) {
+          throw new Error("This project does not belong to you.");
         }
 
         setProject(found);
+        // Preload existing response if any
+        setResponse(found.customer_response || "");
       } catch (err: any) {
         setError(err.message || "Something went wrong");
       } finally {
@@ -177,11 +171,44 @@ const ProjectDetails = () => {
     fetchProject();
   }, [id]);
 
+  // ---------- Submit customer response ----------
+  const handleResolve = async () => {
+    if (!response.trim()) {
+      alert("Please add your response before submitting");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_response: response.trim(),
+          customer_status: "RESOLVED", // 👈 new
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to submit response");
+      }
+
+      alert("Response submitted ✅");
+      navigate("/customer/projects");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link
-          to="/teamlead/projects"
+          to="/customer/projects"
           className="p-2 rounded hover:bg-gray-100 text-gray-600"
           title="Back"
         >
@@ -199,28 +226,19 @@ const ProjectDetails = () => {
           <div className="p-8 text-center text-red-600">{error}</div>
         ) : project ? (
           <div className="p-6 space-y-6">
-            {/* Header with status pills */}
+            {/* Header */}
             <div>
-              <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
                 <p className="text-xs font-mono text-gray-500">
                   Project #{project.id}
                 </p>
-                <div className="flex gap-2">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${projectStatusColor(
-                      project.status
-                    )}`}
-                  >
-                    {project.status}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${customerStatusColor(
-                      project.customer_status
-                    )}`}
-                  >
-                    Customer: {project.customer_status}
-                  </span>
-                </div>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${statusColor(
+                    project.status
+                  )}`}
+                >
+                  {project.status}
+                </span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900">
                 {project.name}
@@ -230,26 +248,14 @@ const ProjectDetails = () => {
               </p>
             </div>
 
-            {/* Progress notes (teamlead's own) */}
+            {/* Progress notes from teamlead — read-only */}
             {project.progress_notes && (
               <div className="border-t pt-6">
-                <p className="text-sm font-semibold text-[#0c2d67] flex items-center gap-2 mb-2">
-                  <CheckCircle size={16} /> Progress Notes (Team Lead)
-                </p>
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 whitespace-pre-wrap">
+                <label className="block text-sm font-medium mb-1">
+                  Progress Notes (from Team Lead)
+                </label>
+                <div className="w-full min-h-[80px] px-4 py-2 border rounded-lg bg-gray-50 text-sm text-gray-800 whitespace-pre-wrap">
                   {project.progress_notes}
-                </div>
-              </div>
-            )}
-
-            {/* Customer response */}
-            {project.customer_response && (
-              <div className="border-t pt-6">
-                <p className="text-sm font-semibold text-[#0c2d67] flex items-center gap-2 mb-2">
-                  <MessageSquare size={16} /> Customer Response
-                </p>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-900 whitespace-pre-wrap">
-                  {project.customer_response}
                 </div>
               </div>
             )}
@@ -318,25 +324,62 @@ const ProjectDetails = () => {
                 label="Last Updated"
                 value={formatDateTime(project.updated_at)}
               />
+
+              {/* 👇 new */}
+              <Field
+                label="Customer Status"
+                value={
+                  project.customer_status && (
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${customerStatusColor(
+                        project.customer_status
+                      )}`}
+                    >
+                      {project.customer_status}
+                    </span>
+                  )
+                }
+              />
             </div>
 
-            {/* Timeline */}
-            <div className="border-t pt-6">
-              <p className="text-sm font-semibold text-[#0c2d67] flex items-center gap-2 mb-3">
-                <Clock size={16} /> Timeline
-              </p>
-              <ul className="text-xs text-gray-600 space-y-2">
-                <li>✅ Created on {formatDateTime(project.created_at)}</li>
-                {project.progress_notes && (
-                  <li>💬 You added progress notes</li>
-                )}
-                {project.customer_response && (
-                  <li>
-                    📩 Customer responded — status: {project.customer_status}
-                  </li>
-                )}
-                <li>🕒 Last updated {formatDateTime(project.updated_at)}</li>
-              </ul>
+            {/* =====================================================
+                Customer Response
+               ===================================================== */}
+            <div className="border-t pt-6 space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Customer Response{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={response}
+                  onChange={(e) => setResponse(e.target.value)}
+                  rows={5}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67]"
+                  placeholder="Write your response or confirmation for this project…"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This will be shared with the team lead and admin.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleResolve}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60"
+                >
+                  <CheckCircle size={16} />
+                  {saving ? "Submitting…" : "Resolve & Notify"}
+                </button>
+                <Link
+                  to="/customer/projects"
+                  className="px-6 py-2 rounded-lg border hover:bg-gray-50"
+                >
+                  Cancel
+                </Link>
+              </div>
             </div>
           </div>
         ) : null}
@@ -345,4 +388,4 @@ const ProjectDetails = () => {
   );
 };
 
-export default ProjectDetails;
+export default CustomerProjectDetails;

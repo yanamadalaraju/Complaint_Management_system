@@ -1,5 +1,12 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, PlusCircle, Ticket, Bell, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  PlusCircle,
+  Ticket,
+  Bell,
+  LogOut,
+  FolderKanban,
+} from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
 
@@ -7,6 +14,7 @@ const menu = [
   { label: "Dashboard", path: "/customer/dashboard", icon: LayoutDashboard },
   { label: "Raise Ticket", path: "/customer/tickets/create", icon: PlusCircle },
   { label: "My Tickets", path: "/customer/tickets", icon: Ticket },
+  { label: "My Projects", path: "/customer/projects", icon: FolderKanban },
   { label: "Notifications", path: "/customer/notifications", icon: Bell },
 ];
 
