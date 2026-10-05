@@ -12,31 +12,31 @@ type Notification = {
   created_at: string;
 };
 
-const Notifications = () => {
+const CustomerNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ---------- Determine logged-in user ----------
+  // ---------- Read ONLY the customer_user key ----------
   const getUser = () => {
-    const admin = localStorage.getItem("admin_user");
-    if (admin) return { ...JSON.parse(admin), role: "admin" };
-
-    const teamlead = localStorage.getItem("teamlead_user");
-    if (teamlead) return { ...JSON.parse(teamlead), role: "teamlead" };
-
-    const customer = localStorage.getItem("customer_user");
-    if (customer) return { ...JSON.parse(customer), role: "customer" };
-
-    return null;
+    const raw = localStorage.getItem("customer_user");
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed?.id) return null;
+      return { ...parsed, role: "customer" as const };
+    } catch {
+      return null;
+    }
   };
 
   const user = getUser();
+  console.log("🔔 Customer Notifications — resolved customer =", user);
 
-  // ---------- Fetch ----------
+  // ---------- Fetch (scoped to this customer only) ----------
   const fetchNotifications = async () => {
     if (!user?.id) {
-      setError("Not logged in.");
+      setError("Not logged in as customer.");
       setLoading(false);
       return;
     }
@@ -45,15 +45,19 @@ const Notifications = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(
-        `http://localhost:5000/api/notifications?user_id=${user.id}`
-      );
+      const url = `http://localhost:5000/api/notifications?user_id=${user.id}`;
+      console.log("🔔 GET", url);
+
+      const res = await fetch(url);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to load notifications");
       }
 
+      console.log(
+        `🔔 Loaded ${data.data?.length || 0} notifications for customer ${user.id}`
+      );
       setNotifications(data.data || []);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -108,7 +112,7 @@ const Notifications = () => {
     }
   };
 
-  // ---------- Format ----------
+  // ---------- Format date ----------
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleString("en-IN", {
       day: "2-digit",
@@ -117,6 +121,25 @@ const Notifications = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+  // ---------- Icon color by type ----------
+  const typeAccent = (type: string) => {
+    switch (type) {
+      case "TICKET_CREATED":
+      case "PROJECT_CREATED":
+        return "bg-blue-500";
+      case "TICKET_ASSIGNED":
+      case "PROJECT_ASSIGNED":
+        return "bg-purple-500";
+      case "TICKET_RESOLVED":
+      case "PROJECT_COMPLETED":
+        return "bg-green-500";
+      case "PROJECT_IN_PROGRESS":
+        return "bg-amber-500";
+      default:
+        return "bg-[#0c2d67]";
+    }
+  };
 
   const hasUnread = notifications.some((n) => !n.is_read);
 
@@ -150,10 +173,8 @@ const Notifications = () => {
               }`}
             >
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                  n.is_read
-                    ? "bg-gray-100 text-gray-500"
-                    : "bg-[#0c2d67] text-white"
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${
+                  n.is_read ? "bg-gray-300" : typeAccent(n.type)
                 }`}
               >
                 <Bell size={16} />
@@ -181,4 +202,4 @@ const Notifications = () => {
   );
 };
 
-export default Notifications;
+export default CustomerNotifications;

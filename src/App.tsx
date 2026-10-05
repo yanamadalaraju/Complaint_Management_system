@@ -44,7 +44,7 @@ import ManageTeamLeads from "@/pages/admin/ManageTeamLeads";
 import CreateTeamLead from "@/pages/admin/CreateTeamLead";
 import EditTeamLead from "@/pages/admin/EditTeamLead";
 import TeamLeadDetails from "@/pages/admin/TeamLeadDetails";
-import AdminNotifications from "@/pages/admin/Notifications";
+
 import AllProjects from "@/pages/admin/AllProjects";
 import AdminProjectDetails from "@/pages/admin/ProjectDetails";
 import AssignProject from "./pages/admin/AssignProject";
@@ -64,7 +64,7 @@ import CDashboard from "@/pages/customer/Dashboard";
 import RaiseTicket from "@/pages/customer/RaiseTicket";
 import MyTickets from "@/pages/customer/MyTickets";
 import CTicketDetails from "@/pages/customer/TicketDetails";
-import CustomerNotifications from "@/pages/customer/Notifications";
+
 import MyProjects from "./pages/customer/MyProjects";
 import CustomerProjectDetails from "./pages/customer/ProjectDetails"; // 👈 NEW
 
@@ -72,6 +72,8 @@ import CustomerProjectDetails from "./pages/customer/ProjectDetails"; // 👈 NE
 import Home from "@/pages/common/Home";
 import NotFound from "@/pages/common/NotFound";
 import Unauthorized from "@/pages/common/Unauthorized";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import CustomerNotifications from "./pages/customer/CustomerNotifications";
 
 const queryClient = new QueryClient();
 

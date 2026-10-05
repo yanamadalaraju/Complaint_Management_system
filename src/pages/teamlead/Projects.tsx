@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Eye, UserPlus } from "lucide-react";
+import { CheckCircle, Eye, UserPlus } from "lucide-react";
 
 type Project = {
   id: number;
@@ -211,7 +211,7 @@ const Projects = () => {
                           className="p-2 rounded hover:bg-green-50 text-green-600"
                           title="Assign Members"
                         >
-                          <UserPlus size={16} />
+                          <CheckCircle size={16} />
                         </Link>
                       </div>
                     </td>

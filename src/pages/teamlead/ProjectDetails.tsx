@@ -5,6 +5,7 @@ import {
   CheckCircle,
   MessageSquare,
   Clock,
+  Send,
 } from "lucide-react";
 
 type Project = {
@@ -16,10 +17,10 @@ type Project = {
   customer_id: number | null;
   admin_id: number | null;
   teamlead_id: number | null;
-  status: string;                     // 👈 new
-  progress_notes: string | null;      // 👈 new
-  customer_response: string | null;   // 👈 new
-  customer_status: string;            // 👈 new
+  status: string;
+  progress_notes: string | null;
+  customer_response: string | null;
+  customer_status: string | null;
   created_at: string;
   updated_at: string;
   customer_name: string | null;
@@ -74,11 +75,10 @@ const projectStatusColor = (status: string) => {
   }
 };
 
-const customerStatusColor = (status: string) => {
+const customerStatusColor = (status: string | null) => {
   switch (status) {
     case "PENDING":
       return "bg-yellow-100 text-yellow-700";
-    case "ACCEPTED":
     case "RESOLVED":
       return "bg-green-100 text-green-700";
     case "REJECTED":
@@ -114,6 +114,10 @@ const ProjectDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ---- Re-resolve form state ----
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
   // ---------- Fetch project by id ----------
   useEffect(() => {
     const fetchProject = async () => {
@@ -121,7 +125,6 @@ const ProjectDetails = () => {
         setLoading(true);
         setError(null);
 
-        // Read logged-in teamlead
         const stored = localStorage.getItem("teamlead_user");
         const teamlead = stored ? JSON.parse(stored) : null;
 
@@ -131,7 +134,6 @@ const ProjectDetails = () => {
 
         let found: Project | null = null;
 
-        // 1) Try single-project endpoint
         try {
           const res = await fetch(`http://localhost:5000/api/projects/${id}`);
           const data = await res.json();
@@ -139,10 +141,9 @@ const ProjectDetails = () => {
             found = Array.isArray(data.data) ? data.data[0] : data.data;
           }
         } catch {
-          // fall through to list fallback
+          // fall through
         }
 
-        // 2) Fallback: fetch list and find by id
         if (!found) {
           const res = await fetch("http://localhost:5000/api/projects");
           const data = await res.json();
@@ -161,12 +162,13 @@ const ProjectDetails = () => {
           throw new Error("Project not found.");
         }
 
-        // Only the assigned team lead can view this project
         if (Number(found.teamlead_id) !== Number(teamlead.id)) {
           throw new Error("This project is not assigned to you.");
         }
 
         setProject(found);
+        // Preload existing notes so the teamlead can edit them
+        setNotes(found.progress_notes || "");
       } catch (err: any) {
         setError(err.message || "Something went wrong");
       } finally {
@@ -176,6 +178,55 @@ const ProjectDetails = () => {
 
     fetchProject();
   }, [id]);
+
+  // ---------- Re-resolve & Notify ----------
+  const handleResolveAndNotify = async () => {
+    if (!notes.trim()) {
+      alert("Please add progress notes before notifying");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "COMPLETED",       // ✅ project status
+          progress_notes: notes.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to update project");
+      }
+
+      alert("Project re-resolved ✅ Customer and admin will be notified.");
+
+      // Refetch to update the page without a hard refresh
+      const fresh = await fetch(`http://localhost:5000/api/projects/${id}`);
+      const freshData = await fresh.json();
+      if (fresh.ok && freshData.success && freshData.data) {
+        const p = Array.isArray(freshData.data)
+          ? freshData.data[0]
+          : freshData.data;
+        setProject(p);
+        setNotes(p.progress_notes || "");
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Show the re-resolve form if the customer is waiting OR the project
+  // was completed and the customer came back with PENDING.
+  const needsAttention =
+    project?.customer_status === "PENDING" ||
+    project?.status === "COMPLETED";
 
   return (
     <div className="space-y-6">
@@ -199,7 +250,7 @@ const ProjectDetails = () => {
           <div className="p-8 text-center text-red-600">{error}</div>
         ) : project ? (
           <div className="p-6 space-y-6">
-            {/* Header with status pills */}
+            {/* Header */}
             <div>
               <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
                 <p className="text-xs font-mono text-gray-500">
@@ -218,7 +269,7 @@ const ProjectDetails = () => {
                       project.customer_status
                     )}`}
                   >
-                    Customer: {project.customer_status}
+                    Customer: {project.customer_status || "—"}
                   </span>
                 </div>
               </div>
@@ -248,7 +299,15 @@ const ProjectDetails = () => {
                 <p className="text-sm font-semibold text-[#0c2d67] flex items-center gap-2 mb-2">
                   <MessageSquare size={16} /> Customer Response
                 </p>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-900 whitespace-pre-wrap">
+                <div
+                  className={`p-4 rounded-lg text-sm whitespace-pre-wrap border ${
+                    project.customer_status === "RESOLVED"
+                      ? "bg-green-50 border-green-200 text-green-900"
+                      : project.customer_status === "PENDING"
+                      ? "bg-yellow-50 border-yellow-200 text-yellow-900"
+                      : "bg-gray-50 border-gray-200 text-gray-900"
+                  }`}
+                >
                   {project.customer_response}
                 </div>
               </div>
@@ -319,6 +378,49 @@ const ProjectDetails = () => {
                 value={formatDateTime(project.updated_at)}
               />
             </div>
+
+            {/* =====================================================
+                Re-resolve & Notify form
+               ===================================================== */}
+            {needsAttention && (
+              <div className="border-t pt-6 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Update Progress Notes{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={5}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67]"
+                    placeholder="Explain what you fixed to close the customer's remaining work…"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    The customer and admin will receive a notification when you
+                    click <strong>Re-resolve & Notify</strong>.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleResolveAndNotify}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60"
+                  >
+                    <Send size={16} />
+                    {saving ? "Sending…" : "Re-resolve & Notify"}
+                  </button>
+                  <Link
+                    to="/teamlead/projects"
+                    className="px-6 py-2 rounded-lg border hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* Timeline */}
             <div className="border-t pt-6">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock } from "lucide-react";
 
 type Project = {
   id: number;
@@ -13,8 +13,8 @@ type Project = {
   teamlead_id: number | null;
   status: string;
   progress_notes: string | null;
-  customer_response: string | null;   // 👈 new
-  customer_status: string | null;     // 👈 new
+  customer_response: string | null;
+  customer_status: string | null;
   created_at: string;
   updated_at: string;
   customer_name: string | null;
@@ -43,7 +43,7 @@ const statusColor = (status: string) => {
   }
 };
 
-// ---------- Customer status pill (new) ----------
+// ---------- Customer status pill ----------
 const customerStatusColor = (status: string | null) => {
   switch (status) {
     case "RESOLVED":
@@ -108,7 +108,7 @@ const CustomerProjectDetails = () => {
 
   // Customer response state
   const [response, setResponse] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<"RESOLVED" | "PENDING" | null>(null);
 
   // ---------- Fetch project by id ----------
   useEffect(() => {
@@ -159,7 +159,6 @@ const CustomerProjectDetails = () => {
         }
 
         setProject(found);
-        // Preload existing response if any
         setResponse(found.customer_response || "");
       } catch (err: any) {
         setError(err.message || "Something went wrong");
@@ -172,20 +171,21 @@ const CustomerProjectDetails = () => {
   }, [id]);
 
   // ---------- Submit customer response ----------
-  const handleResolve = async () => {
+  // status: "RESOLVED" | "PENDING"
+  const submitResponse = async (status: "RESOLVED" | "PENDING") => {
     if (!response.trim()) {
       alert("Please add your response before submitting");
       return;
     }
 
-    setSaving(true);
+    setSaving(status);
     try {
       const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_response: response.trim(),
-          customer_status: "RESOLVED", // 👈 new
+          customer_status: status,
         }),
       });
 
@@ -195,12 +195,16 @@ const CustomerProjectDetails = () => {
         throw new Error(data.message || "Failed to submit response");
       }
 
-      alert("Response submitted ✅");
+      alert(
+        status === "RESOLVED"
+          ? "Marked as Resolved ✅"
+          : "Marked as Pending ⏳"
+      );
       navigate("/customer/projects");
     } catch (err: any) {
       alert(err.message);
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
@@ -325,7 +329,6 @@ const CustomerProjectDetails = () => {
                 value={formatDateTime(project.updated_at)}
               />
 
-              {/* 👇 new */}
               <Field
                 label="Customer Status"
                 value={
@@ -363,16 +366,33 @@ const CustomerProjectDetails = () => {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
+                {/* Resolve button */}
                 <button
                   type="button"
-                  onClick={handleResolve}
-                  disabled={saving}
+                  onClick={() => submitResponse("RESOLVED")}
+                  disabled={saving !== null}
                   className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60"
                 >
                   <CheckCircle size={16} />
-                  {saving ? "Submitting…" : "Resolve & Notify"}
+                  {saving === "RESOLVED"
+                    ? "Submitting…"
+                    : "Resolve & Notify"}
                 </button>
+
+                {/* Pending button */}
+                <button
+                  type="button"
+                  onClick={() => submitResponse("PENDING")}
+                  disabled={saving !== null}
+                  className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 disabled:opacity-60"
+                >
+                  <Clock size={16} />
+                  {saving === "PENDING"
+                    ? "Submitting…"
+                    : "Mark as Pending"}
+                </button>
+
                 <Link
                   to="/customer/projects"
                   className="px-6 py-2 rounded-lg border hover:bg-gray-50"

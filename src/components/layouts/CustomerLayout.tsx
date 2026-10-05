@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 
 const menu = [
   { label: "Dashboard", path: "/customer/dashboard", icon: LayoutDashboard },
@@ -21,6 +22,17 @@ const menu = [
 const CustomerLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+
+  // ---- Read logged-in customer ----
+  const customerRaw =
+    typeof window !== "undefined"
+      ? localStorage.getItem("customer_user")
+      : null;
+  const customer = customerRaw ? JSON.parse(customerRaw) : null;
+  const customerId: number | null = customer?.id ?? null;
+
+  // ---- Live unread badge count ----
+  const unread = useUnreadCount(customerId, "customer_user", 15000);
 
   const logout = () => {
     clearToken("customer");
@@ -41,6 +53,8 @@ const CustomerLayout = () => {
         <nav className="flex-1 p-3 space-y-1">
           {menu.map(({ label, path, icon: Icon }) => {
             const active = pathname.startsWith(path);
+            const isNotifications = path === "/customer/notifications";
+
             return (
               <Link
                 key={path}
@@ -52,7 +66,14 @@ const CustomerLayout = () => {
                 }`}
               >
                 <Icon size={18} />
-                {label}
+                <span className="flex-1">{label}</span>
+
+                {/* 👇 Unread badge — only for the Notifications item */}
+                {isNotifications && unread > 0 && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -71,8 +92,25 @@ const CustomerLayout = () => {
           <h1 className="text-lg font-semibold text-[#0c2d67]">
             Customer Portal
           </h1>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-            CU
+
+          <div className="flex items-center gap-3">
+            {/* 🔔 Header bell with count (optional) */}
+            <Link
+              to="/customer/notifications"
+              className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
+              title="Notifications"
+            >
+              <Bell size={20} />
+              {unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </Link>
+
+            <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
+              CU
+            </div>
           </div>
         </header>
 
