@@ -1,45 +1,50 @@
+// src/layouts/TeamMemberLayout.tsx
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Ticket,
-  Users,
   Bell,
   LogOut,
   FolderKanban,
-  UserCog, // 👈 new icon for Team Members
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 
 const menu = [
-  { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "All Tickets", path: "/admin/tickets", icon: Ticket },
-  { label: "All Projects", path: "/admin/projects", icon: FolderKanban },
-  { label: "Team Leads", path: "/admin/teamleads", icon: Users },
-  { label: "Team Members", path: "/admin/teammembers", icon: UserCog }, // 👈 added
-  { label: "Notifications", path: "/admin/notifications", icon: Bell },
+  { label: "Dashboard", path: "/teammember/dashboard", icon: LayoutDashboard },
+  { label: "My Projects", path: "/teammember/projects", icon: FolderKanban },
+  { label: "Notifications", path: "/teammember/notifications", icon: Bell },
 ];
 
-const AdminLayout = () => {
+const TeamMemberLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  // ---- Read logged-in admin ----
-  const adminRaw =
+  // ---- Read logged-in team member ----
+  const memberRaw =
     typeof window !== "undefined"
-      ? localStorage.getItem("admin_user")
+      ? localStorage.getItem("teammember_user")
       : null;
-  const admin = adminRaw ? JSON.parse(adminRaw) : null;
-  const adminId: number | null = admin?.id ?? null;
+  const member = memberRaw ? JSON.parse(memberRaw) : null;
+  const memberId: number | null = member?.id ?? null;
 
   // ---- Live unread badge count ----
-  const unread = useUnreadCount(adminId, "admin_user", 15000);
+  const unread = useUnreadCount(memberId);
 
   const logout = () => {
-    clearToken("admin");
-    navigate("/admin/login");
+    clearToken("teammember");
+    localStorage.removeItem("teammember_user");
+    navigate("/teammember/login");
   };
+
+  // ---- Avatar initials ----
+  const initials =
+    member?.name
+      ?.trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((n: string) => n[0]?.toUpperCase() ?? "")
+      .join("") || "TM";
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -47,15 +52,15 @@ const AdminLayout = () => {
         <div className="p-5 flex items-center gap-3 border-b border-white/10">
           <img src={logo} alt="logo" className="w-10 h-10 rounded-full" />
           <div>
-            <p className="font-bold text-sm">Admin</p>
-            <p className="text-xs text-white/60">Ticket Manager</p>
+            <p className="font-bold text-sm">Team Member</p>
+            <p className="text-xs text-white/60">Workspace</p>
           </div>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
           {menu.map(({ label, path, icon: Icon }) => {
             const active = pathname.startsWith(path);
-            const isNotifications = path === "/admin/notifications";
+            const isNotifications = path === "/teammember/notifications";
 
             return (
               <Link
@@ -70,15 +75,8 @@ const AdminLayout = () => {
                 <Icon size={18} />
                 <span className="flex-1">{label}</span>
 
-                {/* 👇 Unread badge — only for the Notifications item */}
                 {isNotifications && unread > 0 && (
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      active
-                        ? "bg-red-500 text-white"
-                        : "bg-red-500 text-white"
-                    }`}
-                  >
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 )}
@@ -97,12 +95,13 @@ const AdminLayout = () => {
 
       <main className="flex-1 flex flex-col">
         <header className="bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h1 className="text-lg font-semibold text-[#0c2d67]">Admin Panel</h1>
+          <h1 className="text-lg font-semibold text-[#0c2d67]">
+            Team Member Panel
+          </h1>
 
           <div className="flex items-center gap-3">
-            {/* 🔔 Header bell with count (optional but nice) */}
             <Link
-              to="/admin/notifications"
+              to="/teammember/notifications"
               className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
               title="Notifications"
             >
@@ -114,8 +113,11 @@ const AdminLayout = () => {
               )}
             </Link>
 
-            <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-              AD
+            <div
+              className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs"
+              title={member?.name ?? "Team Member"}
+            >
+              {initials}
             </div>
           </div>
         </header>
@@ -128,4 +130,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout;
+export default TeamMemberLayout;

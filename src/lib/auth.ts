@@ -4,6 +4,7 @@ const TOKEN_KEYS: Record<Role, string> = {
   superadmin: "superadmin_token",
   admin: "admin_token",
   teamlead: "teamlead_token",
+  teammember: "teammember_token", // 👈 added
   customer: "customer_token",
 };
 

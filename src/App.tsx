@@ -9,7 +9,7 @@ import SuperAdminLayout from "@/components/layouts/SuperAdminLayout";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import TeamLeadLayout from "@/components/layouts/TeamLeadLayout";
 import CustomerLayout from "@/components/layouts/CustomerLayout";
-
+import TeamMemberLayout from "@/components/layouts/TeamMemberLayout";
 // Auth
 import SuperAdminLogin from "@/pages/auth/SuperAdminLogin";
 import AdminLogin from "@/pages/auth/AdminLogin";
@@ -74,6 +74,14 @@ import NotFound from "@/pages/common/NotFound";
 import Unauthorized from "@/pages/common/Unauthorized";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import CustomerNotifications from "./pages/customer/CustomerNotifications";
+import TeamMemberDashboard from "./pages/teammember/TeamMemberDashboard";
+import TeamMemberLogin from "./pages/auth/TeamMemberLogin";
+import ManageTeamMembers from "./pages/admin/ManageTeamMembers";
+import CreateTeamMember from "./pages/admin/CreateTeamMember";
+import ViewTeamMember from "./pages/admin/ViewTeamMember";
+import EditTeamMember from "./pages/admin/EditTeamMember";
+import TeamMemberProjects from "./pages/teammember/MyProjects";
+import TeamMemberProjectDetails from "./pages/teammember/TeamMemberProjectDetails";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +100,7 @@ const App = () => (
           <Route path="/customer/login" element={<CustomerLogin />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/teammember/login" element={<TeamMemberLogin />} />
 
           {/* =============== Super Admin =============== */}
           <Route element={<ProtectedRoute allowedRole="superadmin" />}>
@@ -191,6 +200,11 @@ const App = () => (
                 path="/admin/teamleads/:id"
                 element={<TeamLeadDetails />}
               />
+             <Route path="/admin/teammembers" element={<ManageTeamMembers />} />
+             <Route path="/admin/teammembers/create" element={<CreateTeamMember />} />
+              <Route path="/admin/teammembers/:id" element={<ViewTeamMember />} />
+              <Route path="/admin/teammembers/edit/:id" element={<EditTeamMember />} /> 
+              
 
               {/* Notifications */}
               <Route
@@ -241,6 +255,7 @@ const App = () => (
                 element={<CTicketDetails />}
               />
 
+
               {/* Projects */}
               <Route path="/customer/projects" element={<MyProjects />} />
               <Route
@@ -255,6 +270,16 @@ const App = () => (
             </Route>
           </Route>
 
+
+          {/* =============== Team members =============== */}
+          <Route >
+            <Route element={<TeamMemberLayout />}>
+              <Route path="/teammember/dashboard" element={<TeamMemberDashboard />} />
+              <Route path="/teammember/projects" element={<TeamMemberProjects />} />
+              <Route path="/teammember/projects/:id" element={<TeamMemberProjectDetails />} />
+            </Route>
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

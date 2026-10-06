@@ -1,4 +1,4 @@
-export type Role = "superadmin" | "admin" | "teamlead" | "customer";
+export type Role = "superadmin" | "admin" | "teamlead" | "teammember" | "customer";
 
 export type TicketStatus =
   | "OPEN"

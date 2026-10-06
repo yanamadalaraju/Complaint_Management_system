@@ -6,7 +6,20 @@ import {
   MessageSquare,
   Clock,
   Send,
+  Users,
+  Mail,
+  Phone,
 } from "lucide-react";
+
+type TeamMember = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  status: string;
+  created_at: string;
+};
 
 type Project = {
   id: number;
@@ -17,6 +30,7 @@ type Project = {
   customer_id: number | null;
   admin_id: number | null;
   teamlead_id: number | null;
+  member_ids: number[];
   status: string;
   progress_notes: string | null;
   customer_response: string | null;
@@ -29,6 +43,7 @@ type Project = {
   admin_email: string | null;
   teamlead_name: string | null;
   teamlead_email: string | null;
+  team_members: TeamMember[];
 };
 
 const formatDate = (d: string | null) => {
@@ -89,6 +104,14 @@ const customerStatusColor = (status: string | null) => {
       return "bg-gray-100 text-gray-600";
   }
 };
+
+const initialsOf = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase() ?? "")
+    .join("") || "?";
 
 const Field = ({
   label,
@@ -192,7 +215,7 @@ const ProjectDetails = () => {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          status: "COMPLETED",       // ✅ project status
+          status: "COMPLETED",
           progress_notes: notes.trim(),
         }),
       });
@@ -222,8 +245,6 @@ const ProjectDetails = () => {
     }
   };
 
-  // Show the re-resolve form if the customer is waiting OR the project
-  // was completed and the customer came back with PENDING.
   const needsAttention =
     project?.customer_status === "PENDING" ||
     project?.status === "COMPLETED";
@@ -279,6 +300,59 @@ const ProjectDetails = () => {
               <p className="mt-2 text-sm text-gray-600 whitespace-pre-line">
                 {project.description || "No description provided."}
               </p>
+            </div>
+
+            {/* =====================================================
+                NEW — Assigned Team Members
+               ===================================================== */}
+            <div className="border-t pt-6">
+              <p className="text-sm font-semibold text-[#0c2d67] flex items-center gap-2 mb-3">
+                <Users size={16} /> Assigned Team Members
+                <span className="ml-1 text-xs font-normal text-gray-500">
+                  ({project.team_members?.length ?? 0})
+                </span>
+              </p>
+
+              {project.team_members?.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No team members are assigned to this project yet.
+                </p>
+              ) : (
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {project.team_members.map((m) => (
+                    <li
+                      key={m.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50/50"
+                    >
+                      <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0c2d67] to-blue-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                        {initialsOf(m.name)}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {m.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                          <Mail size={11} /> {m.email}
+                        </p>
+                        {m.phone && (
+                          <p className="text-[11px] text-gray-400 truncate flex items-center gap-1 mt-0.5">
+                            <Phone size={11} /> {m.phone}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                          m.status === "active"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {m.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Progress notes (teamlead's own) */}
