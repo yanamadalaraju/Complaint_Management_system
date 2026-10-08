@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import {BASE_URL} from '@/apiurl/apiurl';
 
-const API = "http://localhost:5000";
+const API = BASE_URL ;
 
 /**
  * Fetches the unread notification count for a user.

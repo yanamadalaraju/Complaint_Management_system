@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Customer = {
   id: number;
@@ -23,7 +24,7 @@ const ManageCustomers = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("http://localhost:5000/api/customers");
+      const res = await fetch(`${BASE_URL}/api/customers`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -47,7 +48,7 @@ const ManageCustomers = () => {
     if (!confirm("Delete this customer?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/customers/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/customers/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();

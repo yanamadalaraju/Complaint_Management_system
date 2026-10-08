@@ -1,3 +1,4 @@
+// src/components/layouts/CustomerLayout.tsx
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -34,9 +35,23 @@ const CustomerLayout = () => {
   // ---- Live unread badge count ----
   const unread = useUnreadCount(customerId, "customer_user", 15000);
 
+  /* ---------------- Logout ---------------- */
   const logout = () => {
-    clearToken("customer");
-    navigate("/customer/login");
+    // 1. Remove token (helper-managed, if any)
+    try {
+      clearToken("customer");
+    } catch {
+      /* ignore */
+    }
+
+    // 2. Remove the stored user + residual keys
+    localStorage.removeItem("customer_user");
+    localStorage.removeItem("customer_token");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("customer_user");
+
+    // 3. Redirect (replace so Back button doesn't return to a logged-in page)
+    navigate("/customer/login", { replace: true });
   };
 
   return (
@@ -68,7 +83,6 @@ const CustomerLayout = () => {
                 <Icon size={18} />
                 <span className="flex-1">{label}</span>
 
-                {/* 👇 Unread badge — only for the Notifications item */}
                 {isNotifications && unread > 0 && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">
                     {unread > 99 ? "99+" : unread}
@@ -94,7 +108,6 @@ const CustomerLayout = () => {
           </h1>
 
           <div className="flex items-center gap-3">
-            {/* 🔔 Header bell with count (optional) */}
             <Link
               to="/customer/notifications"
               className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
@@ -108,8 +121,16 @@ const CustomerLayout = () => {
               )}
             </Link>
 
+            {/* Avatar — shows customer initials */}
             <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-              CU
+              {customer?.name
+                ? customer.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((n: string) => n[0]?.toUpperCase() ?? "")
+                    .join("")
+                : "CU"}
             </div>
           </div>
         </header>

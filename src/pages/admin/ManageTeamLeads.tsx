@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type TeamLead = {
   id: number;
@@ -23,7 +24,7 @@ const ManageTeamLeads = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("http://localhost:5000/api/teamleads");
+      const res = await fetch(`${BASE_URL}/api/teamleads`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -47,7 +48,7 @@ const ManageTeamLeads = () => {
     if (!confirm("Delete this team lead?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/teamleads/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/teamleads/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();

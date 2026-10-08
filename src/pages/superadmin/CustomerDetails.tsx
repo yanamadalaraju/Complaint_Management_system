@@ -8,6 +8,7 @@ import {
   Pencil,
   User,
 } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Customer = {
   id: number;
@@ -34,7 +35,7 @@ const CustomerDetails = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:5000/api/customers/${id}`);
+        const res = await fetch(`${BASE_URL}/api/customers/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {

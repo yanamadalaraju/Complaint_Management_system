@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const CreateTeamLead = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const CreateTeamLead = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/teamleads", {
+      const res = await fetch(`${BASE_URL}/api/teamleads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form), // role forced on backend

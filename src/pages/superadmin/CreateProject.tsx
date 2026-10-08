@@ -1,6 +1,9 @@
+// src/pages/superadmin/CreateProject.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
+import SearchSelect from "@/components/ui/SearchSelect";
 
 type Customer = {
   id: number;
@@ -29,8 +32,8 @@ const CreateProject = () => {
     description: "",
     start_date: "",
     end_date: "",
-    customer_id: "",
-    admin_id: "",
+    customer_id: "" as string | number | "",
+    admin_id: "" as string | number | "",
   });
 
   const handleChange = (
@@ -46,8 +49,8 @@ const CreateProject = () => {
         setFetchingOptions(true);
 
         const [custRes, adminRes] = await Promise.all([
-          fetch("http://localhost:5000/api/customers"),
-          fetch("http://localhost:5000/api/admins?role=admin"),
+          fetch(`${BASE_URL}/api/customers`),
+          fetch(`${BASE_URL}/api/admins?role=admin`),
         ]);
 
         const custData = await custRes.json();
@@ -80,7 +83,7 @@ const CreateProject = () => {
         admin_id: form.admin_id ? Number(form.admin_id) : null,
       };
 
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(`${BASE_URL}/api/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -163,60 +166,61 @@ const CreateProject = () => {
           </div>
         </div>
 
-        {/* ---------- Customer dropdown ---------- */}
+        {/* ---------- Searchable Customer ---------- */}
         <div>
           <label className="block text-sm font-medium mb-1">
-            Select Customer
+            Select Customer <span className="text-red-500">*</span>
           </label>
-          <select
-            name="customer_id"
+          <SearchSelect
+            options={customers.map((c) => ({
+              value: c.id,
+              label: c.name,
+              sublabel: c.email,
+            }))}
             value={form.customer_id}
-            onChange={handleChange}
+            onChange={(v) => setForm({ ...form, customer_id: v })}
+            placeholder="— Select Customer —"
+            loading={fetchingOptions}
+            emptyText="No customers available"
+          />
+          {/* hidden input keeps `required` validation on the form */}
+          <input
+            type="text"
             required
-            disabled={fetchingOptions}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67] disabled:bg-gray-100"
-          >
-            <option value="">
-              {fetchingOptions
-                ? "Loading customers…"
-                : customers.length === 0
-                ? "No customers available"
-                : "— Select Customer —"}
-            </option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.email})
-              </option>
-            ))}
-          </select>
+            value={form.customer_id}
+            onChange={() => {}}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
         </div>
 
-        {/* ---------- Admin dropdown ---------- */}
+        {/* ---------- Searchable Admin ---------- */}
         <div>
           <label className="block text-sm font-medium mb-1">
-            Select Admin
+            Select Admin <span className="text-red-500">*</span>
           </label>
-          <select
-            name="admin_id"
+          <SearchSelect
+            options={admins.map((a) => ({
+              value: a.id,
+              label: a.name,
+              sublabel: a.email,
+            }))}
             value={form.admin_id}
-            onChange={handleChange}
+            onChange={(v) => setForm({ ...form, admin_id: v })}
+            placeholder="— Select Admin —"
+            loading={fetchingOptions}
+            emptyText="No admins available"
+          />
+          <input
+            type="text"
             required
-            disabled={fetchingOptions}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67] disabled:bg-gray-100"
-          >
-            <option value="">
-              {fetchingOptions
-                ? "Loading admins…"
-                : admins.length === 0
-                ? "No admins available"
-                : "— Select Admin —"}
-            </option>
-            {admins.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name} ({a.email})
-              </option>
-            ))}
-          </select>
+            value={form.admin_id}
+            onChange={() => {}}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
         </div>
 
         <div className="flex gap-3">

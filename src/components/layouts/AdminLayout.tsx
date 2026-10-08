@@ -1,3 +1,4 @@
+// src/components/layouts/AdminLayout.tsx
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -6,7 +7,7 @@ import {
   Bell,
   LogOut,
   FolderKanban,
-  UserCog, // 👈 new icon for Team Members
+  UserCog,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
@@ -17,7 +18,7 @@ const menu = [
   { label: "All Tickets", path: "/admin/tickets", icon: Ticket },
   { label: "All Projects", path: "/admin/projects", icon: FolderKanban },
   { label: "Team Leads", path: "/admin/teamleads", icon: Users },
-  { label: "Team Members", path: "/admin/teammembers", icon: UserCog }, // 👈 added
+  { label: "Team Members", path: "/admin/teammembers", icon: UserCog },
   { label: "Notifications", path: "/admin/notifications", icon: Bell },
 ];
 
@@ -25,7 +26,6 @@ const AdminLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  // ---- Read logged-in admin ----
   const adminRaw =
     typeof window !== "undefined"
       ? localStorage.getItem("admin_user")
@@ -33,12 +33,27 @@ const AdminLayout = () => {
   const admin = adminRaw ? JSON.parse(adminRaw) : null;
   const adminId: number | null = admin?.id ?? null;
 
-  // ---- Live unread badge count ----
   const unread = useUnreadCount(adminId, "admin_user", 15000);
 
+  /* ---------------- Logout ---------------- */
   const logout = () => {
-    clearToken("admin");
-    navigate("/admin/login");
+    // 1. Remove any token managed by your helper
+    try {
+      clearToken("admin");
+    } catch {
+      // ignore if the helper doesn't exist for this key
+    }
+
+    // 2. Remove the stored user object and any residual keys
+    localStorage.removeItem("admin_user");
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("token");
+
+    // 3. Optionally clear anything else scoped to admin
+    sessionStorage.removeItem("admin_user");
+
+    // 4. Redirect to login
+    navigate("/admin/login", { replace: true });
   };
 
   return (
@@ -70,15 +85,8 @@ const AdminLayout = () => {
                 <Icon size={18} />
                 <span className="flex-1">{label}</span>
 
-                {/* 👇 Unread badge — only for the Notifications item */}
                 {isNotifications && unread > 0 && (
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      active
-                        ? "bg-red-500 text-white"
-                        : "bg-red-500 text-white"
-                    }`}
-                  >
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">
                     {unread > 99 ? "99+" : unread}
                   </span>
                 )}
@@ -100,7 +108,6 @@ const AdminLayout = () => {
           <h1 className="text-lg font-semibold text-[#0c2d67]">Admin Panel</h1>
 
           <div className="flex items-center gap-3">
-            {/* 🔔 Header bell with count (optional but nice) */}
             <Link
               to="/admin/notifications"
               className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
@@ -115,7 +122,14 @@ const AdminLayout = () => {
             </Link>
 
             <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-              AD
+              {admin?.name
+                ? admin.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((n: string) => n[0]?.toUpperCase() ?? "")
+                    .join("")
+                : "AD"}
             </div>
           </div>
         </header>

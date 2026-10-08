@@ -1,13 +1,40 @@
+// src/pages/common/Home.tsx
 import { Link } from "react-router-dom";
-import { ShieldCheck, Users, Wrench, Headphones } from "lucide-react";
+import { ShieldCheck, Users, Wrench, Headphones, UserCheck } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 const Home = () => {
   const roles = [
-    { label: "Super Admin", path: "/superadmin/login", icon: ShieldCheck, color: "from-purple-500 to-indigo-500" },
-    { label: "Admin", path: "/admin/login", icon: Users, color: "from-blue-500 to-cyan-500" },
-    { label: "Team Lead", path: "/teamlead/login", icon: Wrench, color: "from-green-500 to-emerald-500" },
-    { label: "Customer", path: "/customer/login", icon: Headphones, color: "from-pink-500 to-yellow-500" },
+    {
+      label: "Super Admin",
+      path: "/superadmin/login",
+      icon: ShieldCheck,
+      color: "from-purple-500 to-indigo-500",
+    },
+    {
+      label: "Admin",
+      path: "/admin/login",
+      icon: Users,
+      color: "from-blue-500 to-cyan-500",
+    },
+    {
+      label: "Team Lead",
+      path: "/teamlead/login",
+      icon: Wrench,
+      color: "from-green-500 to-emerald-500",
+    },
+    {
+      label: "Team Member",                       // 👈 new
+      path: "/teammember/login",                  // 👈 new
+      icon: UserCheck,                            // 👈 new
+      color: "from-orange-500 to-amber-500",      // 👈 new
+    },
+    {
+      label: "Customer",
+      path: "/customer/login",
+      icon: Headphones,
+      color: "from-pink-500 to-yellow-500",
+    },
   ];
 
   return (
@@ -19,14 +46,16 @@ const Home = () => {
 
       <section className="max-w-6xl mx-auto px-6 py-12 text-center">
         <h2 className="text-4xl md:text-5xl font-extrabold text-[#0c2d67] leading-tight">
-          Complaint & Ticket Management
+          Complaint &amp; Ticket Management
         </h2>
         <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-          A unified platform for Super Admins, Admins, Team Leads, and Customers
-          to raise, assign, resolve, and track support tickets seamlessly.
+          A unified platform for Super Admins, Admins, Team Leads, Team Members
+          and Customers to raise, assign, resolve, and track support tickets
+          seamlessly.
         </p>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
+        {/* 5 cards → 2 / 3 / 5 columns depending on screen size */}
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mt-12">
           {roles.map(({ label, path, icon: Icon, color }) => (
             <Link
               key={label}

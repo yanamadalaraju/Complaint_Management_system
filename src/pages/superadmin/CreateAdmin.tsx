@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const CreateAdmin = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   try {
-    const res = await fetch("http://localhost:5000/api/admins", {
+    const res = await fetch(`${BASE_URL}/api/admins`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

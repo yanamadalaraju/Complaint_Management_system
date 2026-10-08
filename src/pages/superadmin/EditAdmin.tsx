@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const EditAdmin = () => {
   const { id } = useParams();
@@ -18,7 +19,7 @@ const EditAdmin = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:5000/api/admins/${id}`);
+        const res = await fetch(`${BASE_URL}/api/admins/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -50,7 +51,7 @@ const EditAdmin = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/admins/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/admins/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

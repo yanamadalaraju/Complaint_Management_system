@@ -5,6 +5,7 @@ import {
   Bell,
   LogOut,
   FolderKanban,
+  ListChecks,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
 import logo from "@/assets/logo.jpeg";
@@ -13,14 +14,14 @@ import { useUnreadCount } from "@/hooks/useUnreadCount";
 const menu = [
   { label: "Dashboard", path: "/teammember/dashboard", icon: LayoutDashboard },
   { label: "My Projects", path: "/teammember/projects", icon: FolderKanban },
-  { label: "Notifications", path: "/teammember/notifications", icon: Bell },
+  { label: "My Tasks", path: "/teammember/tasks", icon: ListChecks },
+  // { label: "Notifications", path: "/teammember/notifications", icon: Bell },
 ];
 
 const TeamMemberLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  // ---- Read logged-in team member ----
   const memberRaw =
     typeof window !== "undefined"
       ? localStorage.getItem("teammember_user")
@@ -28,16 +29,28 @@ const TeamMemberLayout = () => {
   const member = memberRaw ? JSON.parse(memberRaw) : null;
   const memberId: number | null = member?.id ?? null;
 
-  // ---- Live unread badge count ----
   const unread = useUnreadCount(memberId);
 
+  /* ---------------- Logout ---------------- */
   const logout = () => {
-    clearToken("teammember");
+    // 1. Remove token — guard with try/catch so a helper error doesn't
+    //    block the rest of the cleanup
+    try {
+      clearToken("teammember");
+    } catch (e) {
+      console.warn("clearToken failed, continuing cleanup:", e);
+    }
+
+    // 2. Remove the stored user + every residual key
     localStorage.removeItem("teammember_user");
-    navigate("/teammember/login");
+    localStorage.removeItem("teammember_token");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("teammember_user");
+
+    // 3. Redirect (replace so Back button doesn't return to a logged-in page)
+    navigate("/teammember/login", { replace: true });
   };
 
-  // ---- Avatar initials ----
   const initials =
     member?.name
       ?.trim()

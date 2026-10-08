@@ -1,3 +1,4 @@
+import { BASE_URL } from "@/apiurl/apiurl";
 import { useEffect, useState } from "react";
 
 type Ticket = {
@@ -47,7 +48,7 @@ const AllTickets = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("http://localhost:5000/api/tickets");
+        const res = await fetch(`${BASE_URL}/api/tickets`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {

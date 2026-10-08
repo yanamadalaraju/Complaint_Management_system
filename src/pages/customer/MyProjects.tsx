@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Project = {
   id: number;
@@ -72,7 +73,7 @@ const MyProjects = () => {
           throw new Error("You are not logged in as a customer.");
         }
 
-        const res = await fetch("http://localhost:5000/api/projects");
+        const res = await fetch(`${BASE_URL}/api/projects`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {

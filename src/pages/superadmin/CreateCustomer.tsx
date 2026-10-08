@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const CreateCustomer = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const CreateCustomer = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/customers", {
+      const res = await fetch(`${BASE_URL}/api/customers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

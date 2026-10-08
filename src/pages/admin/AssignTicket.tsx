@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Ticket = {
   id: number;
@@ -43,8 +44,8 @@ const AssignTicket = () => {
         setError(null);
 
         const [ticketRes, teamLeadRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/tickets/${id}`),
-          fetch("http://localhost:5000/api/admins?role=teamlead"),
+          fetch(`${BASE_URL}/api/tickets/${id}`),
+          fetch(`${BASE_URL}/api/admins?role=teamlead`),
         ]);
 
         const ticketData = await ticketRes.json();
@@ -92,7 +93,7 @@ const AssignTicket = () => {
       const stored = localStorage.getItem("admin_user");
       const admin = stored ? JSON.parse(stored) : null;
 
-      const res = await fetch(`http://localhost:5000/api/tickets/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/tickets/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

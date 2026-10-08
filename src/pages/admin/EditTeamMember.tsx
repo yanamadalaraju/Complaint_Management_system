@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type TeamMember = {
   id: number;
@@ -47,7 +48,7 @@ const EditTeamMember = () => {
         setLoadError(null);
 
         const res = await fetch(
-          `http://localhost:5000/api/teammembers/${id}`
+          `${BASE_URL}/api/teammembers/${id}`
         );
         const data = await res.json();
 
@@ -98,7 +99,7 @@ const EditTeamMember = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/teammembers/${id}`,
+        `${BASE_URL}/api/teammembers/${id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

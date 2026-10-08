@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Send } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const categories = ["Billing", "Technical", "Account", "Refund", "Other"];
 
@@ -42,7 +43,7 @@ const RaiseTicket = () => {
       if (customer?.email) fd.append("customer_email", customer.email);
       if (file) fd.append("attachment", file);
 
-      const res = await fetch("http://localhost:5000/api/tickets", {
+      const res = await fetch(`${BASE_URL}/api/tickets`, {
         method: "POST",
         body: fd, // ⚠️ Do NOT set Content-Type
       });

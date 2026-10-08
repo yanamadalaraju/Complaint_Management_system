@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Project = {
   id: number;
@@ -28,7 +29,7 @@ const ManageProjects = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("http://localhost:5000/api/projects");
+      const res = await fetch(`${BASE_URL}/api/projects`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -52,7 +53,7 @@ const ManageProjects = () => {
     if (!confirm("Delete this project?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/projects/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();

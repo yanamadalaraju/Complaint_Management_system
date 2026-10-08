@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const EditCustomer = () => {
   const { id } = useParams();
@@ -25,7 +26,7 @@ const EditCustomer = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:5000/api/customers/${id}`);
+        const res = await fetch(`${BASE_URL}/api/customers/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -73,7 +74,7 @@ const EditCustomer = () => {
         payload.password = form.password.trim();
       }
 
-      const res = await fetch(`http://localhost:5000/api/customers/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/customers/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

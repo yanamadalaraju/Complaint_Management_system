@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Mail, Phone, Calendar } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type TeamLead = {
   id: number;
@@ -27,7 +28,7 @@ const TeamLeadDetails = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:5000/api/teamleads/${id}`);
+        const res = await fetch(`${BASE_URL}/api/teamleads/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {

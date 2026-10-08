@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, UserPlus, Search, RefreshCw } from "lucide-react";
+import {BASE_URL} from '@/apiurl/apiurl';
 
 type Ticket = {
   id: number;
@@ -72,7 +73,7 @@ const AllTickets = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("http://localhost:5000/api/tickets");
+      const res = await fetch(`${BASE_URL}/api/tickets`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {

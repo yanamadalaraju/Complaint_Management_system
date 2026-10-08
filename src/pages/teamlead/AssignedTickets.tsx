@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, CheckCircle } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Ticket = {
   id: number;
@@ -72,7 +73,7 @@ const AssignedTickets = () => {
         }
 
         const res = await fetch(
-          `http://localhost:5000/api/tickets?assigned_to=${teamlead.id}`
+          `${BASE_URL}/api/tickets?assigned_to=${teamlead.id}`
         );
         const data = await res.json();
 

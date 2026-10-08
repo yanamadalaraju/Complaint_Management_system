@@ -7,6 +7,7 @@ import {
   User,
   Paperclip,
 } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Ticket = {
   id: number;
@@ -76,7 +77,7 @@ const TicketDetails = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:5000/api/tickets/${id}`);
+        const res = await fetch(`${BASE_URL}/api/tickets/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -208,7 +209,7 @@ const TicketDetails = () => {
                 <Paperclip size={14} /> Attachment
               </p>
               <a
-                href={`http://localhost:5000${ticket.attachment_url}`}
+                href={`${BASE_URL}${ticket.attachment_url}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-blue-600 underline hover:text-blue-800"

@@ -1,3 +1,4 @@
+// src/components/layouts/TeamLeadLayout.tsx
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,9 +21,30 @@ const TeamLeadLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
+  // ---- Read logged-in team lead (for avatar initials) ----
+  const teamleadRaw =
+    typeof window !== "undefined"
+      ? localStorage.getItem("teamlead_user")
+      : null;
+  const teamlead = teamleadRaw ? JSON.parse(teamleadRaw) : null;
+
+  /* ---------------- Logout ---------------- */
   const logout = () => {
-    clearToken("teamlead");
-    navigate("/teamlead/login");
+    // 1. Remove token (helper-managed)
+    try {
+      clearToken("teamlead");
+    } catch {
+      /* ignore */
+    }
+
+    // 2. Remove the stored user + residual keys
+    localStorage.removeItem("teamlead_user");
+    localStorage.removeItem("teamlead_token");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("teamlead_user");
+
+    // 3. Redirect (replace so Back button doesn't return to a logged-in page)
+    navigate("/teamlead/login", { replace: true });
   };
 
   return (
@@ -70,7 +92,14 @@ const TeamLeadLayout = () => {
             Team Lead Panel
           </h1>
           <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-            TL
+            {teamlead?.name
+              ? teamlead.name
+                  .trim()
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((n: string) => n[0]?.toUpperCase() ?? "")
+                  .join("")
+              : "TL"}
           </div>
         </header>
 

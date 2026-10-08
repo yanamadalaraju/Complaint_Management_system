@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Customer = {
   id: number;
@@ -44,9 +45,9 @@ const EditProject = () => {
         setError(null);
 
         const [projectRes, custRes, adminRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/projects/${id}`),
-          fetch("http://localhost:5000/api/customers"),
-          fetch("http://localhost:5000/api/admins?role=admin"),
+          fetch(`${BASE_URL}/api/projects/${id}`),
+          fetch(`${BASE_URL}/api/customers`),
+          fetch(`${BASE_URL}/api/admins?role=admin`),
         ]);
 
         const projectData = await projectRes.json();
@@ -106,7 +107,7 @@ const EditProject = () => {
         admin_id: form.admin_id ? Number(form.admin_id) : null,
       };
 
-      const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/projects/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

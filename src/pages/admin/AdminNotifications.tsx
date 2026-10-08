@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, Check } from "lucide-react";
+import {BASE_URL} from '@/apiurl/apiurl';
 
 type Notification = {
   id: number;
@@ -45,7 +46,7 @@ const AdminNotifications = () => {
       setLoading(true);
       setError(null);
 
-      const url = `http://localhost:5000/api/notifications?user_id=${user.id}`;
+      const url = `${BASE_URL}/api/notifications?user_id=${user.id}`;
       console.log("🔔 GET", url);
 
       const res = await fetch(url);
@@ -75,7 +76,7 @@ const AdminNotifications = () => {
   const markRead = async (id: number) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/notifications/${id}/read`,
+        `${BASE_URL}/api/notifications/${id}/read`,
         { method: "PUT" }
       );
       const data = await res.json();
@@ -97,7 +98,7 @@ const AdminNotifications = () => {
     if (!user?.id) return;
     try {
       const res = await fetch(
-        `http://localhost:5000/api/notifications/mark-all-read?user_id=${user.id}`,
+        `${BASE_URL}/api/notifications/mark-all-read?user_id=${user.id}`,
         { method: "PUT" }
       );
       const data = await res.json();

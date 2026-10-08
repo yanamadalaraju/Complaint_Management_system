@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Project = {
   id: number;
@@ -51,7 +52,7 @@ const ProjectResolveTicket = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:5000/api/projects/${id}`);
+        const res = await fetch(`${BASE_URL}/api/projects/${id}`);
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -80,7 +81,7 @@ const ProjectResolveTicket = () => {
 
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/projects/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

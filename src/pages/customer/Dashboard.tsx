@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Ticket, Clock, CheckCircle, PlusCircle } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type TicketRow = {
   id: number;
@@ -74,8 +75,8 @@ const Dashboard = () => {
         const customer = stored ? JSON.parse(stored) : null;
 
         const url = customer?.id
-          ? `http://localhost:5000/api/tickets?customer_id=${customer.id}`
-          : `http://localhost:5000/api/tickets`;
+          ? `${BASE_URL}/api/tickets?customer_id=${customer.id}`
+          : `${BASE_URL}/api/tickets`;
 
         const res = await fetch(url);
         const data = await res.json();

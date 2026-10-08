@@ -82,6 +82,10 @@ import ViewTeamMember from "./pages/admin/ViewTeamMember";
 import EditTeamMember from "./pages/admin/EditTeamMember";
 import TeamMemberProjects from "./pages/teammember/MyProjects";
 import TeamMemberProjectDetails from "./pages/teammember/TeamMemberProjectDetails";
+import MyTasks from "./pages/teammember/MyTasks";
+import ResolveTask from "./pages/teammember/ResolveTask";
+import TaskDetail from "./pages/teamlead/TaskDetail";
+import TaskDetailMember from "./pages/teammember/TaskDetail_member";
 
 const queryClient = new QueryClient();
 
@@ -238,6 +242,11 @@ const App = () => (
                 path="/teamlead/projects/:id/assign"
                 element={<AssignProjectMembers />}
               />
+              {/* 👇 FIXED: :taskId (was :id) so it doesn't clash with :id above */}
+              <Route
+                path="/teamlead/projects/:id/tasks/:taskId"
+                element={<TaskDetail />}
+              />
             </Route>
           </Route>
 
@@ -277,6 +286,9 @@ const App = () => (
               <Route path="/teammember/dashboard" element={<TeamMemberDashboard />} />
               <Route path="/teammember/projects" element={<TeamMemberProjects />} />
               <Route path="/teammember/projects/:id" element={<TeamMemberProjectDetails />} />
+              <Route path="/teammember/tasks" element={<MyTasks />} /> 
+              <Route path="/teammember/tasks/:id/resolve" element={<ResolveTask />} /> 
+              <Route path="/teammember/tasks/:id" element={<TaskDetailMember />} />  
             </Route>
           </Route>
           

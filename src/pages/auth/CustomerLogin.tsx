@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import logo from "@/assets/logo.jpeg";
 import { Eye, EyeOff } from "lucide-react";
 import { setToken } from "@/lib/auth";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const CustomerLogin = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const CustomerLogin = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/customers/login", {
+      const res = await fetch(`${BASE_URL}/api/customers/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

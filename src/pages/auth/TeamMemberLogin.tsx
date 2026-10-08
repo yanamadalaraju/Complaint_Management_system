@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.jpeg";
 import { Eye, EyeOff } from "lucide-react";
 import { setToken } from "@/lib/auth";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 const TeamMemberLogin = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const TeamMemberLogin = () => {
 
     try {
       // ---- Fetch team members list from API ----
-      const listRes = await fetch("http://localhost:5000/api/teammembers");
+      const listRes = await fetch(`${BASE_URL}/api/teammembers`);
       const listData = await listRes.json();
 
       if (!listRes.ok || !listData.success) {
@@ -38,7 +39,7 @@ const TeamMemberLogin = () => {
       }
 
       // ---- Now verify the password via the login endpoint ----
-      const res = await fetch("http://localhost:5000/api/teammembers/login", {
+      const res = await fetch(`${BASE_URL}/api/teammembers/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Clock } from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Project = {
   id: number;
@@ -127,7 +128,7 @@ const CustomerProjectDetails = () => {
         let found: Project | null = null;
 
         try {
-          const res = await fetch(`http://localhost:5000/api/projects/${id}`);
+          const res = await fetch(`${BASE_URL}/api/projects/${id}`);
           const data = await res.json();
           if (res.ok && data.success && data.data) {
             found = Array.isArray(data.data) ? data.data[0] : data.data;
@@ -137,7 +138,7 @@ const CustomerProjectDetails = () => {
         }
 
         if (!found) {
-          const res = await fetch("http://localhost:5000/api/projects");
+          const res = await fetch(`${BASE_URL}/api/projects`);
           const data = await res.json();
 
           if (!res.ok || !data.success) {
@@ -180,7 +181,7 @@ const CustomerProjectDetails = () => {
 
     setSaving(status);
     try {
-      const res = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/projects/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
