@@ -27,11 +27,13 @@ type Project = {
   teamlead_name: string | null;
   teamlead_email: string | null;
   status: string;
-  member_ids: number[];
+  member_ids: string | number[] | null;
   team_members: { id: number; name: string; email: string }[];
   created_at: string;
   updated_at: string;
 };
+
+const PAGE_SIZE = 10;
 
 /* ---------------- Status style helpers ---------------- */
 const STATUS_STYLES: Record<string, string> = {
@@ -66,14 +68,16 @@ const MyProjects = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | string>("all");
+  const [page, setPage] = useState(1);
 
-  // ---- Read logged-in team member ----
-  const memberRaw =
+  // ✅ FIX: Read logged-in team lead instead of team member
+  const userRaw =
     typeof window !== "undefined"
-      ? localStorage.getItem("teammember_user")
+      ? localStorage.getItem("teamlead_user")
       : null;
-  const member = memberRaw ? JSON.parse(memberRaw) : null;
-  const memberId: number | null = member?.id ?? null;
+  const user = userRaw ? JSON.parse(userRaw) : null;
+  const teamLeadId: number | null =
+    user?.id != null ? Number(user.id) : null;
 
   // ---------- Fetch projects ----------
   const fetchProjects = async () => {
@@ -81,20 +85,19 @@ const MyProjects = () => {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`${BASE_URL}/api/projects`);
+      const res = await fetch(`${BASE_URL}/api/projects?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to load projects");
       }
 
-      // Keep only the projects this member is assigned to
-      const mine = (data.data || []).filter(
-        (p: Project) =>
-          Array.isArray(p.member_ids) &&
-          memberId !== null &&
-          p.member_ids.includes(memberId)
-      );
+      // ✅ FIX: Filter by teamlead_id
+      const mine = (data.data || []).filter((p: Project) => {
+        return teamLeadId !== null && Number(p.teamlead_id) === teamLeadId;
+      });
 
       setProjects(mine);
     } catch (err: any) {
@@ -107,7 +110,7 @@ const MyProjects = () => {
   useEffect(() => {
     fetchProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memberId]);
+  }, [teamLeadId]);
 
   // ---------- Filter ----------
   const filtered = useMemo(() => {
@@ -125,6 +128,22 @@ const MyProjects = () => {
     }),
     [projects]
   );
+
+  // ---------- Pagination ----------
+  // (kept above the early returns below so hooks always run in the same order)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+  // Go back to page 1 whenever the status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
+
+  // Keep page in range if the list shrinks
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   /* ============================================================
      RENDER
@@ -162,7 +181,7 @@ const MyProjects = () => {
             <FolderKanban size={22} /> My Projects
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Projects you are assigned to as a team member.
+            Projects you are assigned to as a team lead.
           </p>
         </div>
 
@@ -213,7 +232,7 @@ const MyProjects = () => {
             </p>
             <p className="text-xs">
               {projects.length === 0
-                ? "When a team lead assigns you to a project, it will appear here."
+                ? "When an admin assigns you as a Team Lead, the project will appear here."
                 : "Try changing the status filter."}
             </p>
           </div>
@@ -231,7 +250,7 @@ const MyProjects = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map((p) => {
+                {paginated.map((p) => {
                   const StatusIcon = STATUS_ICONS[p.status] ?? CheckCircle2;
                   return (
                     <tr key={p.id} className="hover:bg-gray-50/70 transition">
@@ -316,7 +335,7 @@ const MyProjects = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            to={`/teammember/projects/${p.id}`}
+                            to={`/teamlead/projects/${p.id}`} // ✅ Adjusted link for team lead view
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0c2d67] text-white hover:bg-[#0a2450] transition"
                             title="View project"
                           >
@@ -332,6 +351,31 @@ const MyProjects = () => {
           </div>
         )}
 
+        {/* ---------- Pagination controls ---------- */}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Footer summary */}
         {filtered.length > 0 && (
           <div className="px-4 py-3 border-t text-xs text-gray-500 flex items-center justify-between">
@@ -342,7 +386,7 @@ const MyProjects = () => {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Users size={12} />
-              Logged in as {member?.name ?? "Team Member"}
+              Logged in as {user?.name ?? "Team Lead"}
             </span>
           </div>
         )}

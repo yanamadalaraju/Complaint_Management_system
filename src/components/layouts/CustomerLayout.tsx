@@ -9,7 +9,7 @@ import {
   FolderKanban,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-iiiqbets.png";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 
 const menu = [
@@ -50,15 +50,20 @@ const CustomerLayout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("customer_user");
 
-    // 3. Redirect (replace so Back button doesn't return to a logged-in page)
-    navigate("/customer/login", { replace: true });
+    // 3. Redirect to root login (replace so Back button doesn't return to a logged-in page)
+    navigate("/", { replace: true });
   };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-64 bg-[#0c2d67] text-white flex flex-col">
         <div className="p-5 flex items-center gap-3 border-b border-white/10">
-          <img src={logo} alt="logo" className="w-10 h-10 rounded-full" />
+          {/* ✅ Logo — full aspect ratio, no crop */}
+          <img
+            src={logo}
+            alt="logo"
+            className="h-10 w-auto object-contain bg-white rounded-lg px-2 py-1"
+          />
           <div>
             <p className="font-bold text-sm">Customer</p>
             <p className="text-xs text-white/60">Support Portal</p>
@@ -67,7 +72,12 @@ const CustomerLayout = () => {
 
         <nav className="flex-1 p-3 space-y-1">
           {menu.map(({ label, path, icon: Icon }) => {
-            const active = pathname.startsWith(path);
+            // Fix: Use exact match for "/customer/tickets" so it doesn't trigger on "/customer/tickets/create"
+            const active =
+              path === "/customer/tickets"
+                ? pathname === path
+                : pathname.startsWith(path);
+
             const isNotifications = path === "/customer/notifications";
 
             return (

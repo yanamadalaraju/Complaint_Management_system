@@ -24,6 +24,8 @@ type Project = {
   teamlead_email: string | null;
 };
 
+const PAGE_SIZE = 10;
+
 // ---------- Status color pill ----------
 const statusColor = (status: string) => {
   switch (status) {
@@ -58,6 +60,7 @@ const MyProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   // ---------- Fetch projects for the logged-in customer ----------
   useEffect(() => {
@@ -96,6 +99,16 @@ const MyProjects = () => {
     fetchProjects();
   }, []);
 
+  // ---------- Pagination ----------
+  const totalPages = Math.max(1, Math.ceil(projects.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const paginatedProjects = projects.slice(startIndex, startIndex + PAGE_SIZE);
+
+  // Keep page in range if the list shrinks
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-[#0c2d67]">My Projects</h2>
@@ -132,7 +145,7 @@ const MyProjects = () => {
                   </td>
                 </tr>
               ) : (
-                projects.map((p) => (
+                paginatedProjects.map((p) => (
                   <tr key={p.id} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-xs">{p.id}</td>
                     <td className="px-4 py-3">
@@ -191,6 +204,36 @@ const MyProjects = () => {
               )}
             </tbody>
           </table>
+        )}
+
+        {/* ---------- Pagination controls ---------- */}
+        {!loading && !error && projects.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <span>
+              Showing {startIndex + 1}–
+              {Math.min(startIndex + PAGE_SIZE, projects.length)} of{" "}
+              {projects.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

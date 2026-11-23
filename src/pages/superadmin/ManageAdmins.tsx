@@ -13,10 +13,13 @@ type Admin = {
   created_at: string;
 };
 
+const PAGE_SIZE = 10;
+
 const ManageAdmins = () => {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   // ---------- Fetch admins ----------
   const fetchAdmins = async () => {
@@ -42,6 +45,16 @@ const ManageAdmins = () => {
   useEffect(() => {
     fetchAdmins();
   }, []);
+
+  // ---------- Pagination ----------
+  const totalPages = Math.max(1, Math.ceil(admins.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const paginatedAdmins = admins.slice(startIndex, startIndex + PAGE_SIZE);
+
+  // Keep page in range (e.g. after deleting the last item on a page)
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   // ---------- Delete ----------
   const handleDelete = async (id: number) => {
@@ -113,7 +126,7 @@ const ManageAdmins = () => {
               </tr>
             </thead>
             <tbody>
-              {admins.map((a) => (
+              {paginatedAdmins.map((a) => (
                 <tr key={a.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{a.name}</td>
                   <td className="px-4 py-3">{a.email}</td>
@@ -148,6 +161,36 @@ const ManageAdmins = () => {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* ---------- Pagination controls ---------- */}
+        {!loading && !error && admins.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <span>
+              Showing {startIndex + 1}–
+              {Math.min(startIndex + PAGE_SIZE, admins.length)} of{" "}
+              {admins.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -41,7 +41,7 @@ type ProjectDetail = {
   customer_id: number | null;
   admin_id: number | null;
   teamlead_id: number | null;
-  member_ids: number[];
+  member_ids: string | number[] | null; // ✅ accepts both string and array
   status: string;
   progress_notes: string | null;
   customer_response: string | null;
@@ -55,6 +55,28 @@ type ProjectDetail = {
   teamlead_name: string | null;
   teamlead_email: string | null;
   team_members: TeamMember[];
+};
+
+/** Parse "[21,19,16,18]" or [21,19,16,18] into numbers */
+const parseMemberIds = (raw: unknown): number[] => {
+  if (Array.isArray(raw)) return raw.map(Number).filter((n) => !isNaN(n));
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed))
+        return parsed.map(Number).filter((n) => !isNaN(n));
+    } catch {
+      /* fall through */
+    }
+    return trimmed
+      .replace(/[\[\]]/g, "")
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => !isNaN(n));
+  }
+  return [];
 };
 
 /* ---------------- Status style helpers ---------------- */
@@ -118,7 +140,8 @@ const TeamMemberProjectDetails = () => {
       ? localStorage.getItem("teammember_user")
       : null;
   const member = memberRaw ? JSON.parse(memberRaw) : null;
-  const memberId: number | null = member?.id ?? null;
+  const memberId: number | null =
+    member?.id != null ? Number(member.id) : null;
 
   // ---------- Fetch project ----------
   const fetchProject = async () => {
@@ -181,11 +204,9 @@ const TeamMemberProjectDetails = () => {
     );
   }
 
-  // Only allow members who are assigned to this project
-  const isAssigned =
-    memberId !== null &&
-    Array.isArray(project.member_ids) &&
-    project.member_ids.includes(memberId);
+  // ✅ FIX: Use parseMemberIds to safely handle the string representation
+  const assignedIds = parseMemberIds(project.member_ids);
+  const isAssigned = memberId !== null && assignedIds.includes(memberId);
 
   if (!isAssigned) {
     return (

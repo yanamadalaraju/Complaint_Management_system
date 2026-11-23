@@ -1,3 +1,4 @@
+// src/pages/customer/ProjectDetails.tsx
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Clock } from "lucide-react";
@@ -128,7 +129,8 @@ const CustomerProjectDetails = () => {
         let found: Project | null = null;
 
         try {
-          const res = await fetch(`${BASE_URL}/api/projects/${id}`);
+          // ✅ FIX: Added cache-buster
+          const res = await fetch(`${BASE_URL}/api/projects/${id}?_t=${Date.now()}`, { cache: "no-store" });
           const data = await res.json();
           if (res.ok && data.success && data.data) {
             found = Array.isArray(data.data) ? data.data[0] : data.data;
@@ -138,7 +140,8 @@ const CustomerProjectDetails = () => {
         }
 
         if (!found) {
-          const res = await fetch(`${BASE_URL}/api/projects`);
+          // ✅ FIX: Added cache-buster
+          const res = await fetch(`${BASE_URL}/api/projects?_t=${Date.now()}`, { cache: "no-store" });
           const data = await res.json();
 
           if (!res.ok || !data.success) {

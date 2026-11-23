@@ -24,6 +24,8 @@ type Project = {
   created_at: string;
 };
 
+const PAGE_SIZE = 10;
+
 // ---------- Project status pill ----------
 const projectStatusColor = (s: string) => {
   switch (s) {
@@ -65,6 +67,7 @@ const AllProjects = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notLoggedIn, setNotLoggedIn] = useState(false);
+  const [page, setPage] = useState(1);
 
   const [customerFilter, setCustomerFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
@@ -148,6 +151,22 @@ const AllProjects = () => {
         return true;
       });
   }, [projects, customerFilter, search, me]);
+
+  // ---------- Pagination ----------
+  // (kept above the early return below so hooks always run in the same order)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+  // Go back to page 1 whenever filters/search change
+  useEffect(() => {
+    setPage(1);
+  }, [customerFilter, search]);
+
+  // Keep page in range if the list shrinks
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   // ---------- Format date ----------
   const formatDate = (iso: string | null) =>
@@ -255,7 +274,7 @@ const AllProjects = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
+              {paginated.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <p className="font-medium">{p.name}</p>
@@ -349,6 +368,36 @@ const AllProjects = () => {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* ---------- Pagination controls ---------- */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <span>
+              Showing {startIndex + 1}–
+              {Math.min(startIndex + PAGE_SIZE, filtered.length)} of{" "}
+              {filtered.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

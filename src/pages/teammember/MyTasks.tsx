@@ -35,6 +35,8 @@ type Task = {
 
 const API = `${BASE_URL}`;
 
+const PAGE_SIZE = 10;
+
 /* ---------- helpers ---------- */
 const formatDate = (d: string | null) => {
   if (!d) return null;
@@ -76,13 +78,15 @@ const MyTasks = () => {
   >("ALL");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
 
   const memberRaw =
     typeof window !== "undefined"
       ? localStorage.getItem("teammember_user")
       : null;
   const member = memberRaw ? JSON.parse(memberRaw) : null;
-  const memberId: number | null = member?.id ?? null;
+  const memberId: number | null =
+    member?.id != null ? Number(member.id) : null;
 
   /* ---------- fetch ---------- */
   const fetchTasks = async (showSpinner = true) => {
@@ -95,13 +99,23 @@ const MyTasks = () => {
       if (showSpinner) setLoading(true);
       setError(null);
 
-      const res = await fetch(`${API}/api/tasks/member/${memberId}`);
+      const res = await fetch(
+        `${API}/api/tasks/member/${memberId}?_ts=${Date.now()}`,
+        { cache: "no-store" }
+      );
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to load tasks");
       }
-      setTasks(data.data || []);
+
+      // ✅ Ensure only this member's tasks are displayed, 
+      // even if the API happens to return a global list.
+      const mine = (data.data || []).filter(
+        (t: Task) => Number(t.member_id) === memberId
+      );
+
+      setTasks(mine);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -113,7 +127,7 @@ const MyTasks = () => {
   useEffect(() => {
     fetchTasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [memberId]);
 
   /* ---------- update status (inline dropdown) ---------- */
   const updateStatus = async (taskId: number, newStatus: Task["status"]) => {
@@ -156,6 +170,21 @@ const MyTasks = () => {
     () => (filter === "ALL" ? tasks : tasks.filter((t) => t.status === filter)),
     [tasks, filter]
   );
+
+  /* ---------- pagination ---------- */
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const paginated = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+  // Go back to page 1 whenever the status filter tab changes
+  useEffect(() => {
+    setPage(1);
+  }, [filter]);
+
+  // Keep page in range if the list shrinks
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -270,7 +299,7 @@ const MyTasks = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => {
+                {paginated.map((t) => {
                   const overdue = isOverdue(t.due_date, t.status);
                   const isUpdating = updatingId === t.id;
                   const isCompleted = t.status === "COMPLETED";
@@ -416,6 +445,36 @@ const MyTasks = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* ---------- Pagination controls ---------- */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <span>
+              Showing {startIndex + 1}–
+              {Math.min(startIndex + PAGE_SIZE, filtered.length)} of{" "}
+              {filtered.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>

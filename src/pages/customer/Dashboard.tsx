@@ -1,211 +1,139 @@
-import { useEffect, useState } from "react";
+// src/pages/customer/Dashboard.tsx
 import { Link } from "react-router-dom";
-import { Ticket, Clock, CheckCircle, PlusCircle } from "lucide-react";
-import { BASE_URL } from "@/apiurl/apiurl";
-
-type TicketRow = {
-  id: number;
-  ticket_id: string;
-  subject: string;
-  category: string;
-  priority: string;
-  status: string;
-  customer_id: number | null;
-  assigned_to: number | null;
-  attachment_url: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-const StatCard = ({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: number | string;
-  icon: any;
-  color: string;
-}) => (
-  <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
-    <div
-      className={`w-12 h-12 rounded-lg flex items-center justify-center text-white ${color}`}
-    >
-      <Icon size={22} />
-    </div>
-    <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-2xl font-bold text-[#0c2d67]">{value}</p>
-    </div>
-  </div>
-);
-
-const statusColor = (status: string) => {
-  switch (status) {
-    case "OPEN":
-      return "bg-yellow-100 text-yellow-700";
-    case "ASSIGNED":
-      return "bg-blue-100 text-blue-700";
-    case "IN_PROGRESS":
-      return "bg-purple-100 text-purple-700";
-    case "RESOLVED":
-      return "bg-green-100 text-green-700";
-    case "CLOSED":
-      return "bg-gray-200 text-gray-700";
-    default:
-      return "bg-gray-100 text-gray-600";
-  }
-};
+import { Ticket, Clock, CheckCircle, PlusCircle, FolderKanban, Repeat } from "lucide-react";
+import {
+  useApi, getStoredUser, StatCard, Card, PageHeader, ErrorBanner, Donut, Empty, Pill, TicketTable,
+  ProjectHistoryTable, ProgressBar, statusColor, STATUS_HEX, countBy, isClosed, buildProjectHistory,
+  fmtDate, Ticket as TicketT, Project,
+} from "@/components/dashboard/DashboardKit";
 
 const Dashboard = () => {
-  const [tickets, setTickets] = useState<TicketRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const me = getStoredUser(["customer_user"]);
+  const q = me?.id ? `?customer_id=${me.id}` : "";
+  const { data, loading, errors, reload } = useApi([`/api/tickets${q}`, `/api/projects${q}`]);
 
-  // ---------- Fetch tickets ----------
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const tickets = data[0] as TicketT[];
+  // Projects endpoint returns all projects – keep only this customer's
+  const projects = (data[1] as Project[]).filter((p) => !me || p.customer_id === me.id);
 
-        // Scope to logged-in customer if available; otherwise show all (dev)
-        const stored = localStorage.getItem("customer_user");
-        const customer = stored ? JSON.parse(stored) : null;
-
-        const url = customer?.id
-          ? `${BASE_URL}/api/tickets?customer_id=${customer.id}`
-          : `${BASE_URL}/api/tickets`;
-
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          throw new Error(data.message || "Failed to load tickets");
-        }
-
-        setTickets(data.data || []);
-      } catch (err: any) {
-        setError(err.message || "Something went wrong");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTickets();
-  }, []);
-
-  // ---------- Stats ----------
-  const open = tickets.filter(
-    (t) => t.status === "OPEN" || t.status === "ASSIGNED"
-  ).length;
+  const v = (n: number | string) => (loading ? "…" : n);
+  const open = tickets.filter((t) => t.status === "OPEN" || t.status === "ASSIGNED").length;
   const inProgress = tickets.filter((t) => t.status === "IN_PROGRESS").length;
-  const resolved = tickets.filter(
-    (t) => t.status === "RESOLVED" || t.status === "CLOSED"
-  ).length;
+  const resolved = tickets.filter((t) => isClosed(t.status)).length;
+  const status = countBy(tickets, (t) => t.status);
+  const history = buildProjectHistory(tickets, projects);
 
-  // ---------- Recent ----------
-  const recent = tickets.slice(0, 5);
+  // Completed projects waiting for the customer's confirmation
+  const toConfirm = projects.filter(
+    (p) => p.status === "COMPLETED" && (!p.customer_status || p.customer_status === "PENDING")
+  );
+  const needsAttention = projects.filter(
+    (p) => p.status === "COMPLETED" && tickets.some((t) => t.project_id === p.id && !isClosed(t.status))
+  );
 
-  // ---------- Format date ----------
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  const projectProgress = (p: Project) =>
+    p.status === "COMPLETED" ? 100 : p.status === "IN_PROGRESS" ? 60 : p.status === "ASSIGNED" ? 20 : 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-3">
-        <h2 className="text-2xl font-bold text-[#0c2d67]">My Dashboard</h2>
-        <Link
-          to="/customer/tickets/create"
-          className="inline-flex items-center gap-2 bg-[#0c2d67] text-white px-4 py-2 rounded-lg hover:bg-[#0a2450]"
-        >
-          <PlusCircle size={16} /> Raise New Ticket
-        </Link>
+      <PageHeader
+        title="My Dashboard"
+        subtitle="Track your projects and support tickets"
+        onRefresh={reload}
+        right={
+          <Link
+            to="/customer/tickets/create"
+            className="inline-flex items-center gap-2 bg-[#0c2d67] text-white px-4 py-2 rounded-lg hover:bg-[#0a2450]"
+          >
+            <PlusCircle size={16} /> Raise New Ticket
+          </Link>
+        }
+      />
+      <ErrorBanner errors={errors} />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Open / Assigned" value={v(open)} icon={Ticket} color="bg-yellow-500" />
+        <StatCard label="In Progress" value={v(inProgress)} icon={Clock} color="bg-blue-500" />
+        <StatCard label="Resolved" value={v(resolved)} icon={CheckCircle} color="bg-green-500" />
+        <StatCard label="My Projects" value={v(projects.length)} icon={FolderKanban} color="bg-purple-500" to="/customer/projects" />
       </div>
 
-      {/* ---------- Stats ---------- */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          label="Open / Assigned"
-          value={loading ? "…" : open}
-          icon={Ticket}
-          color="bg-yellow-500"
-        />
-        <StatCard
-          label="In Progress"
-          value={loading ? "…" : inProgress}
-          icon={Clock}
-          color="bg-blue-500"
-        />
-        <StatCard
-          label="Resolved"
-          value={loading ? "…" : resolved}
-          icon={CheckCircle}
-          color="bg-green-500"
-        />
-      </div>
+      {toConfirm.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-start gap-3">
+          <CheckCircle className="text-green-600 mt-0.5" size={20} />
+          <div className="text-sm">
+            <p className="font-semibold text-green-800">Project completed — please review</p>
+            <p className="text-green-700 mt-1">
+              {toConfirm.map((p) => p.name).join(", ")}. If everything works, confirm it. If you still see an issue, raise a new ticket and the same team will pick it up.
+            </p>
+            <Link to="/customer/projects" className="inline-block mt-2 text-xs font-semibold text-green-800 hover:underline">
+              Review projects →
+            </Link>
+          </div>
+        </div>
+      )}
 
-      {/* ---------- Recent Tickets ---------- */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="font-semibold text-[#0c2d67] mb-4">Recent Tickets</h3>
+      {needsAttention.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl px-5 py-4 flex items-start gap-3">
+          <Repeat className="text-orange-500 mt-0.5" size={20} />
+          <p className="text-sm text-orange-800">
+            You have open tickets on completed project(s): <b>{needsAttention.map((p) => p.name).join(", ")}</b>. The team is working on them.
+          </p>
+        </div>
+      )}
 
-        {loading ? (
-          <p className="text-sm text-gray-500 text-center py-4">
-            Loading tickets…
-          </p>
-        ) : error ? (
-          <p className="text-sm text-red-600 text-center py-4">{error}</p>
-        ) : recent.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">
-            No tickets yet. Click “Raise New Ticket” to create one.
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-gray-500 border-b">
-              <tr>
-                <th className="py-2">Ticket ID</th>
-                <th className="py-2">Subject</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Created</th>
-                <th className="py-2 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((t) => (
-                <tr key={t.id} className="border-b last:border-0">
-                  <td className="py-2 font-mono text-xs">{t.ticket_id}</td>
-                  <td className="py-2">{t.subject}</td>
-                  <td className="py-2">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${statusColor(
-                        t.status
-                      )}`}
-                    >
-                      {t.status}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card title="My Tickets" className="lg:col-span-1">
+          <Donut
+            centerValue={tickets.length}
+            centerLabel="total"
+            segments={Object.entries(status).map(([label, value]) => ({ label, value, color: STATUS_HEX[label] || "#94a3b8" }))}
+          />
+        </Card>
+
+        <Card title="My Projects" className="lg:col-span-2">
+          {projects.length === 0 ? <Empty text="No projects yet." /> : (
+            <div className="space-y-4">
+              {projects.slice(0, 5).map((p) => (
+                <div key={p.id}>
+                  <div className="flex justify-between items-center text-sm mb-1.5 gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Link to={`/customer/history/${p.id}`} className="font-medium text-[#0c2d67] hover:underline">{p.name}</Link>
+                      <Pill text={p.status} className={statusColor(p.status)} />
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      Lead: {p.teamlead_name || "—"} · Ends {fmtDate(p.end_date)}
                     </span>
-                  </td>
-                  <td className="py-2 text-gray-500 text-xs">
-                    {formatDate(t.created_at)}
-                  </td>
-                  <td className="py-2 text-right">
-                    <Link
-                      to={`/customer/tickets/${t.id}`}
-                      className="text-[#0c2d67] hover:underline text-xs font-semibold"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
+                  </div>
+                  <ProgressBar value={projectProgress(p)} color={p.status === "COMPLETED" ? "#22c55e" : "#0c2d67"} />
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
+            </div>
+          )}
+        </Card>
       </div>
+
+      <Card title="Issue History by Project">
+        <ProjectHistoryTable rows={history} limit={6} />
+      </Card>
+
+      <Card
+        title="Recent Tickets"
+        action={<Link to="/customer/tickets" className="text-xs font-semibold text-[#0c2d67] hover:underline">View all</Link>}
+      >
+        {loading ? (
+          <p className="text-sm text-gray-500 text-center py-4">Loading tickets…</p>
+        ) : (
+          <TicketTable
+            tickets={tickets.slice(0, 5)}
+            showAssignee
+            emptyText="No tickets yet. Click “Raise New Ticket” to create one."
+            actions={(t) => (
+              <Link to={`/customer/tickets/${t.id}`} className="text-[#0c2d67] hover:underline text-xs font-semibold">View</Link>
+            )}
+          />
+        )}
+      </Card>
     </div>
   );
 };

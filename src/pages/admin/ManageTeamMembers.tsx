@@ -14,10 +14,13 @@ type TeamMember = {
   created_at: string;
 };
 
+const PAGE_SIZE = 10;
+
 const ManageTeamMembers = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   // ---------- Fetch team members ----------
   const fetchTeamMembers = async () => {
@@ -43,6 +46,19 @@ const ManageTeamMembers = () => {
   useEffect(() => {
     fetchTeamMembers();
   }, []);
+
+  // ---------- Pagination ----------
+  const totalPages = Math.max(1, Math.ceil(teamMembers.length / PAGE_SIZE));
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const paginatedTeamMembers = teamMembers.slice(
+    startIndex,
+    startIndex + PAGE_SIZE
+  );
+
+  // Keep page in range (e.g. after deleting the last item on a page)
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   // ---------- Delete ----------
   const handleDelete = async (id: number) => {
@@ -111,7 +127,7 @@ const ManageTeamMembers = () => {
               </tr>
             </thead>
             <tbody>
-              {teamMembers.map((tm) => (
+              {paginatedTeamMembers.map((tm) => (
                 <tr key={tm.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{tm.name}</td>
                   <td className="px-4 py-3">{tm.email}</td>
@@ -164,6 +180,36 @@ const ManageTeamMembers = () => {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* ---------- Pagination controls ---------- */}
+        {!loading && !error && teamMembers.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <span>
+              Showing {startIndex + 1}–
+              {Math.min(startIndex + PAGE_SIZE, teamMembers.length)} of{" "}
+              {teamMembers.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

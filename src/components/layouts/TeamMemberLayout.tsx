@@ -8,7 +8,7 @@ import {
   ListChecks,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-iiiqbets.png";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 
 const menu = [
@@ -33,22 +33,18 @@ const TeamMemberLayout = () => {
 
   /* ---------------- Logout ---------------- */
   const logout = () => {
-    // 1. Remove token — guard with try/catch so a helper error doesn't
-    //    block the rest of the cleanup
     try {
       clearToken("teammember");
     } catch (e) {
       console.warn("clearToken failed, continuing cleanup:", e);
     }
 
-    // 2. Remove the stored user + every residual key
     localStorage.removeItem("teammember_user");
     localStorage.removeItem("teammember_token");
     localStorage.removeItem("token");
     sessionStorage.removeItem("teammember_user");
 
-    // 3. Redirect (replace so Back button doesn't return to a logged-in page)
-    navigate("/teammember/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   const initials =
@@ -63,7 +59,12 @@ const TeamMemberLayout = () => {
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-64 bg-[#0c2d67] text-white flex flex-col">
         <div className="p-5 flex items-center gap-3 border-b border-white/10">
-          <img src={logo} alt="logo" className="w-10 h-10 rounded-full" />
+          {/* ✅ Logo — full aspect ratio, no crop */}
+          <img
+            src={logo}
+            alt="logo"
+            className="h-10 w-auto object-contain bg-white rounded-lg px-2 py-1"
+          />
           <div>
             <p className="font-bold text-sm">Team Member</p>
             <p className="text-xs text-white/60">Workspace</p>

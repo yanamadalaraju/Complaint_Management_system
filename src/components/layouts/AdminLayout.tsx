@@ -10,7 +10,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-iiiqbets.png";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 
 const menu = [
@@ -35,32 +35,21 @@ const AdminLayout = () => {
 
   const unread = useUnreadCount(adminId, "admin_user", 15000);
 
-  /* ---------------- Logout ---------------- */
   const logout = () => {
-    // 1. Remove any token managed by your helper
-    try {
-      clearToken("admin");
-    } catch {
-      // ignore if the helper doesn't exist for this key
-    }
-
-    // 2. Remove the stored user object and any residual keys
-    localStorage.removeItem("admin_user");
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("token");
-
-    // 3. Optionally clear anything else scoped to admin
-    sessionStorage.removeItem("admin_user");
-
-    // 4. Redirect to login
-    navigate("/admin/login", { replace: true });
+    clearToken("admin");
+    navigate("/", { replace: true });
   };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-64 bg-[#0c2d67] text-white flex flex-col">
         <div className="p-5 flex items-center gap-3 border-b border-white/10">
-          <img src={logo} alt="logo" className="w-10 h-10 rounded-full" />
+          {/* ✅ Logo — full width preserved, no crop */}
+          <img
+            src={logo}
+            alt="logo"
+            className="h-10 w-auto object-contain bg-white rounded-lg px-2 py-1"
+          />
           <div>
             <p className="font-bold text-sm">Admin</p>
             <p className="text-xs text-white/60">Ticket Manager</p>
@@ -122,14 +111,7 @@ const AdminLayout = () => {
             </Link>
 
             <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-              {admin?.name
-                ? admin.name
-                    .trim()
-                    .split(/\s+/)
-                    .slice(0, 2)
-                    .map((n: string) => n[0]?.toUpperCase() ?? "")
-                    .join("")
-                : "AD"}
+              AD
             </div>
           </div>
         </header>

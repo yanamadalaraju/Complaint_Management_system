@@ -1,7 +1,7 @@
 // src/pages/common/Home.tsx
 import { Link } from "react-router-dom";
 import { ShieldCheck, Users, Wrench, Headphones, UserCheck } from "lucide-react";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-iiiqbets.png";
 
 const Home = () => {
   const roles = [
@@ -24,10 +24,10 @@ const Home = () => {
       color: "from-green-500 to-emerald-500",
     },
     {
-      label: "Team Member",                       // 👈 new
-      path: "/teammember/login",                  // 👈 new
-      icon: UserCheck,                            // 👈 new
-      color: "from-orange-500 to-amber-500",      // 👈 new
+      label: "Team Member",
+      path: "/teammember/login",
+      icon: UserCheck,
+      color: "from-orange-500 to-amber-500",
     },
     {
       label: "Customer",
@@ -39,8 +39,13 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f4f6f9] via-white to-[#eef1f7]">
-      <header className="max-w-6xl mx-auto px-6 py-6 flex items-center gap-3">
-        <img src={logo} alt="Logo" className="w-12 h-12 rounded-full" />
+      <header className="max-w-6xl mx-auto px-6 py-6 flex items-center gap-4">
+        {/* ✅ Logo — full width preserved, no crop */}
+        <img
+          src={logo}
+          alt="Logo"
+          className="h-12 w-auto object-contain"
+        />
         <h1 className="text-lg font-bold text-[#0c2d67]">Support Desk</h1>
       </header>
 
@@ -54,7 +59,6 @@ const Home = () => {
           seamlessly.
         </p>
 
-        {/* 5 cards → 2 / 3 / 5 columns depending on screen size */}
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mt-12">
           {roles.map(({ label, path, icon: Icon, color }) => (
             <Link

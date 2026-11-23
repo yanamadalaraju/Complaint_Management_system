@@ -3,18 +3,18 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Ticket,
-  CheckCircle,
+  // CheckCircle,
   LogOut,
   FolderKanban,
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-iiiqbets.png";
 
 const menu = [
   { label: "Dashboard", path: "/teamlead/dashboard", icon: LayoutDashboard },
   { label: "Assigned Tickets", path: "/teamlead/tickets", icon: Ticket },
   { label: "Assigned Projects", path: "/teamlead/projects", icon: FolderKanban },
-  { label: "Resolved History", path: "/teamlead/resolved", icon: CheckCircle },
+  // { label: "Resolved History", path: "/teamlead/resolved", icon: CheckCircle },
 ];
 
 const TeamLeadLayout = () => {
@@ -43,15 +43,20 @@ const TeamLeadLayout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("teamlead_user");
 
-    // 3. Redirect (replace so Back button doesn't return to a logged-in page)
-    navigate("/teamlead/login", { replace: true });
+    // 3. Redirect to root login (replace so Back button doesn't return to a logged-in page)
+    navigate("/", { replace: true });
   };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
       <aside className="w-64 bg-[#0c2d67] text-white flex flex-col">
         <div className="p-5 flex items-center gap-3 border-b border-white/10">
-          <img src={logo} alt="logo" className="w-10 h-10 rounded-full" />
+          {/* ✅ Logo — full aspect ratio, no crop */}
+          <img
+            src={logo}
+            alt="logo"
+            className="h-10 w-auto object-contain bg-white rounded-lg px-2 py-1"
+          />
           <div>
             <p className="font-bold text-sm">Team Lead</p>
             <p className="text-xs text-white/60">Resolver</p>

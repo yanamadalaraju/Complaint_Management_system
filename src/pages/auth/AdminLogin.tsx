@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo-iiiqbets.png";
 import { Eye, EyeOff } from "lucide-react";
 import { setToken } from "@/lib/auth";
 import { BASE_URL } from "@/apiurl/apiurl";

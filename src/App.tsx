@@ -87,6 +87,9 @@ import ResolveTask from "./pages/teammember/ResolveTask";
 import TaskDetail from "./pages/teamlead/TaskDetail";
 import TaskDetailMember from "./pages/teammember/TaskDetail_member";
 
+// 👇 NEW: Shared History page (used by Admin, Customer, TeamLead, TeamMember layouts)
+import History from "@/pages/History";
+import ProjectHistory from "./pages/customer/ProjectHistory";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -97,14 +100,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* Public */}
-          <Route path="/" element={<Home />} />
-          <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+          {/* <Route path="/" element={<Home />} /> */}
+          <Route path="/" element={<SuperAdminLogin />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/teamlead/login" element={<TeamLeadLogin />} />
+          <Route path="/teammember/login" element={<TeamMemberLogin />} />
           <Route path="/customer/login" element={<CustomerLogin />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/teammember/login" element={<TeamMemberLogin />} />
 
           {/* =============== Super Admin =============== */}
           <Route element={<ProtectedRoute allowedRole="superadmin" />}>
@@ -174,10 +177,7 @@ const App = () => (
               {/* Tickets */}
               <Route path="/admin/tickets" element={<AAllTickets />} />
               <Route path="/admin/tickets/:id" element={<ATicketDetails />} />
-              <Route
-                path="/admin/tickets/:id/assign"
-                element={<AssignTicket />}
-              />
+              <Route path="/admin/tickets/:id/assign" element={<AssignTicket />}/>
 
               {/* Projects */}
               <Route path="/admin/projects" element={<AllProjects />} />
@@ -204,17 +204,19 @@ const App = () => (
                 path="/admin/teamleads/:id"
                 element={<TeamLeadDetails />}
               />
-             <Route path="/admin/teammembers" element={<ManageTeamMembers />} />
-             <Route path="/admin/teammembers/create" element={<CreateTeamMember />} />
+              <Route path="/admin/teammembers" element={<ManageTeamMembers />} />
+              <Route path="/admin/teammembers/create" element={<CreateTeamMember />} />
               <Route path="/admin/teammembers/:id" element={<ViewTeamMember />} />
-              <Route path="/admin/teammembers/edit/:id" element={<EditTeamMember />} /> 
-              
+              <Route path="/admin/teammembers/edit/:id" element={<EditTeamMember />} />
 
               {/* Notifications */}
               <Route
                 path="/admin/notifications"
                 element={<AdminNotifications />}
               />
+
+              {/* 👇 NEW: History */}
+              <Route path="/admin/history" element={<History />} />
             </Route>
           </Route>
 
@@ -247,6 +249,9 @@ const App = () => (
                 path="/teamlead/projects/:id/tasks/:taskId"
                 element={<TaskDetail />}
               />
+
+              {/* 👇 NEW: History */}
+              <Route path="/teamlead/history" element={<History />} />
             </Route>
           </Route>
 
@@ -255,6 +260,7 @@ const App = () => (
             <Route element={<CustomerLayout />}>
               <Route path="/customer/dashboard" element={<CDashboard />} />
               <Route path="/customer/tickets" element={<MyTickets />} />
+              <Route path="/customer/history/:projectId" element={<ProjectHistory />} />
               <Route
                 path="/customer/tickets/create"
                 element={<RaiseTicket />}
@@ -263,7 +269,6 @@ const App = () => (
                 path="/customer/tickets/:id"
                 element={<CTicketDetails />}
               />
-
 
               {/* Projects */}
               <Route path="/customer/projects" element={<MyProjects />} />
@@ -276,22 +281,27 @@ const App = () => (
                 path="/customer/notifications"
                 element={<CustomerNotifications />}
               />
+
+              {/* 👇 NEW: History */}
+              <Route path="/customer/history" element={<History />} />
             </Route>
           </Route>
 
-
           {/* =============== Team members =============== */}
-          <Route >
+          <Route>
             <Route element={<TeamMemberLayout />}>
               <Route path="/teammember/dashboard" element={<TeamMemberDashboard />} />
               <Route path="/teammember/projects" element={<TeamMemberProjects />} />
               <Route path="/teammember/projects/:id" element={<TeamMemberProjectDetails />} />
-              <Route path="/teammember/tasks" element={<MyTasks />} /> 
-              <Route path="/teammember/tasks/:id/resolve" element={<ResolveTask />} /> 
-              <Route path="/teammember/tasks/:id" element={<TaskDetailMember />} />  
+              <Route path="/teammember/tasks" element={<MyTasks />} />
+              <Route path="/teammember/tasks/:id/resolve" element={<ResolveTask />} />
+              <Route path="/teammember/tasks/:id" element={<TaskDetailMember />} />
+
+              {/* 👇 NEW: History */}
+              <Route path="/teammember/history" element={<History />} />
             </Route>
           </Route>
-          
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,7 +1,17 @@
-import React, { useEffect, useState } from "react";
+// src/pages/admin/AssignProject.tsx
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, AlertTriangle, CheckCircle2, Users } from "lucide-react";
-import {BASE_URL} from '@/apiurl/apiurl';
+import {
+  ArrowLeft,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  Users,
+  ChevronDown,
+  Search,
+  X,
+} from "lucide-react";
+import { BASE_URL } from "@/apiurl/apiurl";
 
 type Project = {
   id: number;
@@ -36,14 +46,19 @@ const AssignProject = () => {
 
   const [project, setProject] = useState<Project | null>(null);
   const [teamLeads, setTeamLeads] = useState<TeamLead[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]); // 👈 new
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [teamLeadId, setTeamLeadId] = useState("");
-  const [memberIds, setMemberIds] = useState<number[]>([]); // 👈 new (multi-select)
+  const [memberIds, setMemberIds] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
+
+  // ✅ Custom Dropdown State for Team Lead
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [leadSearch, setLeadSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ---------- Load project + team leads + team members ----------
   useEffect(() => {
@@ -55,7 +70,7 @@ const AssignProject = () => {
         const [projectRes, teamLeadRes, teamMemberRes] = await Promise.all([
           fetch(`${BASE_URL}/api/projects/${id}`),
           fetch(`${BASE_URL}/api/teamleads`),
-          fetch(`${BASE_URL}/api/teammembers`), // 👈 new
+          fetch(`${BASE_URL}/api/teammembers`),
         ]);
 
         const projectData = await projectRes.json();
@@ -91,10 +106,19 @@ const AssignProject = () => {
           setTeamLeadId(String(projectData.data.teamlead_id));
         }
 
-        // Preselect currently assigned members if your API returns them
+        // Preselect currently assigned members (handling string or array)
+        let currentMembers: number[] = [];
         if (Array.isArray(projectData.data.member_ids)) {
-          setMemberIds(projectData.data.member_ids);
+          currentMembers = projectData.data.member_ids;
+        } else if (typeof projectData.data.member_ids === "string") {
+          try {
+            // Handles "[21,19,16,18]"
+            currentMembers = JSON.parse(projectData.data.member_ids);
+          } catch (e) {
+            /* ignore */
+          }
         }
+        setMemberIds(currentMembers);
       } catch (err: any) {
         setError(err.message || "Something went wrong");
       } finally {
@@ -104,6 +128,34 @@ const AssignProject = () => {
 
     if (id) loadData();
   }, [id]);
+
+  // ---------- Handle click outside dropdown ----------
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ✅ Filter team leads based on search
+  const filteredTeamLeads = useMemo(() => {
+    const q = leadSearch.toLowerCase().trim();
+    if (!q) return teamLeads;
+    return teamLeads.filter(
+      (tl) =>
+        tl.name.toLowerCase().includes(q) ||
+        tl.email.toLowerCase().includes(q)
+    );
+  }, [teamLeads, leadSearch]);
+
+  // ✅ Get currently selected Team Lead object for display
+  const selectedLead = teamLeads.find((tl) => tl.id === Number(teamLeadId));
 
   // ---------- Toggle member in multi-select ----------
   const toggleMember = (memberId: number) => {
@@ -130,7 +182,7 @@ const AssignProject = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamlead_id: Number(teamLeadId),
-          member_ids: memberIds, // 👈 new
+          member_ids: memberIds,
           notes,
         }),
       });
@@ -208,33 +260,85 @@ const AssignProject = () => {
         onSubmit={handleSubmit}
         className="bg-white rounded-xl shadow-sm p-6 max-w-2xl space-y-5"
       >
-        {/* ---- Team Lead ---- */}
-        <div>
+        {/* ---- Team Lead (Searchable Dropdown) ---- */}
+        <div ref={dropdownRef} className="relative">
           <label className="block text-sm font-medium mb-1">
             Assign to Team Lead
           </label>
-          <select
-            value={teamLeadId}
-            onChange={(e) => setTeamLeadId(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c2d67]"
+
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((o) => !o)}
+            className="w-full px-4 py-2 border rounded-lg flex items-center justify-between bg-white text-left focus:outline-none focus:ring-2 focus:ring-[#0c2d67]"
           >
-            <option value="">— Select Team Lead —</option>
-            {teamLeads.length === 0 ? (
-              <option value="" disabled>
-                No team leads available — create one first
-              </option>
-            ) : (
-              teamLeads.map((tl) => (
-                <option key={tl.id} value={tl.id}>
-                  {tl.name} ({tl.email})
-                </option>
-              ))
-            )}
-          </select>
+            <span
+              className={selectedLead ? "text-gray-900" : "text-gray-400"}
+            >
+              {selectedLead
+                ? `${selectedLead.name} (${selectedLead.email})`
+                : "— Select Team Lead —"}
+            </span>
+            <ChevronDown size={16} className="text-gray-500" />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute z-20 mt-1 w-full bg-white border rounded-lg shadow-lg">
+              {/* Search Input */}
+              <div className="p-2 border-b flex items-center gap-2">
+                <Search size={14} className="text-gray-400" />
+                <input
+                  autoFocus
+                  value={leadSearch}
+                  onChange={(e) => setLeadSearch(e.target.value)}
+                  placeholder="Search team leads by name or email…"
+                  className="flex-1 text-sm outline-none"
+                />
+                {leadSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setLeadSearch("")}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Dropdown List */}
+              <div className="max-h-60 overflow-y-auto">
+                {filteredTeamLeads.length === 0 ? (
+                  <p className="p-3 text-sm text-gray-500 text-center">
+                    No team leads found
+                  </p>
+                ) : (
+                  filteredTeamLeads.map((tl) => (
+                    <button
+                      type="button"
+                      key={tl.id}
+                      onClick={() => {
+                        setTeamLeadId(String(tl.id));
+                        setDropdownOpen(false);
+                        setLeadSearch("");
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex flex-col ${
+                        Number(teamLeadId) === tl.id ? "bg-blue-50" : ""
+                      }`}
+                    >
+                      <span className="font-medium text-gray-800">
+                        {tl.name}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate">
+                        {tl.email}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ---- NEW: Select Team Members (multi-select checkboxes) ---- */}
+        {/* ---- Select Team Members (multi-select checkboxes) ---- */}
         <div>
           <label className="block text-sm font-medium mb-1 flex items-center gap-2">
             <Users size={16} className="text-gray-500" />
