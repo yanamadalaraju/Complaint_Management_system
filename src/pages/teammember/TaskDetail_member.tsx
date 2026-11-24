@@ -1,4 +1,4 @@
-// src/pages/teammember/TaskDetail.tsx
+// src/pages/teammember/TaskDetail_member.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2, CheckCircle, Calendar, FolderKanban, User } from "lucide-react";
@@ -58,15 +58,21 @@ const TaskDetailMember = () => {
         const stored = localStorage.getItem("teammember_user");
         const member = stored ? JSON.parse(stored) : null;
         if (!member?.id) throw new Error("You are not logged in.");
+        const memberId = Number(member.id);
 
-        const res = await fetch(`${API}/api/tasks/member/${member.id}`);
+        // Get all tasks, match task.member_id with logged-in teammember_user id
+        const res = await fetch(`${API}/api/tasks?_ts=${Date.now()}`, {
+          cache: "no-store",
+        });
         const data = await res.json();
         if (!res.ok || !data.success) {
           throw new Error(data.message || "Failed to load task");
         }
         const found =
-          (data.data || []).find((t: Task) => Number(t.id) === Number(id)) ||
-          null;
+          (data.data || []).find(
+            (t: Task) =>
+              Number(t.id) === Number(id) && Number(t.member_id) === memberId
+          ) || null;
         if (!found) throw new Error("Task not found.");
         setTask(found);
       } catch (err: any) {

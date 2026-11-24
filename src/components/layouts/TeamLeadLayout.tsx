@@ -1,4 +1,5 @@
 // src/components/layouts/TeamLeadLayout.tsx
+import { useEffect, useState } from "react"; // 🔔 NEW
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -6,14 +7,17 @@ import {
   // CheckCircle,
   LogOut,
   FolderKanban,
+  Bell, // 🔔 NEW
 } from "lucide-react";
 import { clearToken } from "@/lib/auth";
+import { BASE_URL } from "@/apiurl/apiurl"; // 🔔 NEW
 import logo from "@/assets/logo-iiiqbets.png";
 
 const menu = [
   { label: "Dashboard", path: "/teamlead/dashboard", icon: LayoutDashboard },
   { label: "Assigned Tickets", path: "/teamlead/tickets", icon: Ticket },
   { label: "Assigned Projects", path: "/teamlead/projects", icon: FolderKanban },
+  { label: "Notifications", path: "/teamlead/notifications", icon: Bell }, // 🔔 NEW
   // { label: "Resolved History", path: "/teamlead/resolved", icon: CheckCircle },
 ];
 
@@ -27,6 +31,35 @@ const TeamLeadLayout = () => {
       ? localStorage.getItem("teamlead_user")
       : null;
   const teamlead = teamleadRaw ? JSON.parse(teamleadRaw) : null;
+
+  // 🔔 NEW: unread count for the badge
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!teamlead?.id) return;
+
+    const loadUnread = async () => {
+      try {
+        const res = await fetch(
+          `${BASE_URL}/api/notifications/unread-count?user_id=${teamlead.id}`
+        );
+        const data = await res.json();
+        if (res.ok && data.success) setUnread(Number(data.count) || 0);
+      } catch {
+        /* ignore — badge is non-critical */
+      }
+    };
+
+    loadUnread();
+    const timer = setInterval(loadUnread, 30000); // refresh every 30s
+    window.addEventListener("notifications-updated", loadUnread);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("notifications-updated", loadUnread);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamlead?.id, pathname]);
 
   /* ---------------- Logout ---------------- */
   const logout = () => {
@@ -78,6 +111,12 @@ const TeamLeadLayout = () => {
               >
                 <Icon size={18} />
                 {label}
+                {/* 🔔 NEW: unread badge on the Notifications item */}
+                {path === "/teamlead/notifications" && unread > 0 && (
+                  <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -96,15 +135,31 @@ const TeamLeadLayout = () => {
           <h1 className="text-lg font-semibold text-[#0c2d67]">
             Team Lead Panel
           </h1>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
-            {teamlead?.name
-              ? teamlead.name
-                  .trim()
-                  .split(/\s+/)
-                  .slice(0, 2)
-                  .map((n: string) => n[0]?.toUpperCase() ?? "")
-                  .join("")
-              : "TL"}
+          <div className="flex items-center gap-4">
+            {/* 🔔 NEW: header bell with unread badge */}
+            <Link
+              to="/teamlead/notifications"
+              className="relative text-gray-600 hover:text-[#0c2d67]"
+              aria-label="Notifications"
+            >
+              <Bell size={20} />
+              {unread > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
+            </Link>
+
+            <div className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 via-yellow-400 to-blue-500 flex items-center justify-center text-white font-bold">
+              {teamlead?.name
+                ? teamlead.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((n: string) => n[0]?.toUpperCase() ?? "")
+                    .join("")
+                : "TL"}
+            </div>
           </div>
         </header>
 

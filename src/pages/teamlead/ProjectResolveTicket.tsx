@@ -70,6 +70,45 @@ const ProjectResolveTicket = () => {
     if (id) fetchProject();
   }, [id]);
 
+  // ---------- Notify admin (user_id = project.admin_id = admin_user.id in localStorage) ----------
+  const notifyAdmin = async (
+    proj: Project,
+    newStatus: "COMPLETED" | "IN_PROGRESS",
+    progressNotes: string
+  ) => {
+    if (!proj.admin_id) {
+      console.warn("🔔 No admin_id on project — skipping admin notification");
+      return;
+    }
+
+    const isCompleted = newStatus === "COMPLETED";
+    const payload = {
+      user_id: proj.admin_id,
+      ticket_id: null,
+      title: isCompleted ? "Project Completed" : "Project In Progress",
+      message: `${proj.teamlead_name || "Team lead"} marked project "${
+        proj.name
+      }" as ${isCompleted ? "completed" : "in progress"}. Notes: ${progressNotes}`,
+      type: isCompleted ? "PROJECT_COMPLETED" : "PROJECT_IN_PROGRESS",
+    };
+
+    try {
+      console.log("🔔 POST notification to admin", payload);
+      const res = await fetch(`${BASE_URL}/api/notifications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        console.error("🔔 Admin notification failed:", data.message);
+      }
+    } catch (err) {
+      // Never block the main flow if the notification fails
+      console.error("🔔 Admin notification error:", err);
+    }
+  };
+
   // ---------- Submit ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +133,11 @@ const ProjectResolveTicket = () => {
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to update project");
+      }
+
+      // Send notification to the admin of this project
+      if (project) {
+        await notifyAdmin(project, status, notes.trim());
       }
 
       alert(

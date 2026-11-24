@@ -90,6 +90,7 @@ import TaskDetailMember from "./pages/teammember/TaskDetail_member";
 // 👇 NEW: Shared History page (used by Admin, Customer, TeamLead, TeamMember layouts)
 import History from "@/pages/History";
 import ProjectHistory from "./pages/customer/ProjectHistory";
+import TeamLeadNotifications from "./pages/teamlead/TeamLeadNotifications";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -252,6 +253,9 @@ const App = () => (
 
               {/* 👇 NEW: History */}
               <Route path="/teamlead/history" element={<History />} />
+
+              <Route path="/teamlead/notifications" element={<TeamLeadNotifications />} />
+
             </Route>
           </Route>
 

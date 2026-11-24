@@ -36,6 +36,7 @@ type Task = {
 const API = `${BASE_URL}`;
 
 const PAGE_SIZE = 10;
+const AUTO_REFRESH_MS = 15000; // pick up newly assigned tasks every 15s
 
 /* ---------- helpers ---------- */
 const formatDate = (d: string | null) => {
@@ -99,18 +100,18 @@ const MyTasks = () => {
       if (showSpinner) setLoading(true);
       setError(null);
 
-      const res = await fetch(
-        `${API}/api/tasks/member/${memberId}?_ts=${Date.now()}`,
-        { cache: "no-store" }
-      );
+      // Get ALL tasks from the API, then keep only the ones whose
+      // member_id matches the logged-in teammember_user id (localStorage)
+      const res = await fetch(`${API}/api/tasks?_ts=${Date.now()}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to load tasks");
       }
 
-      // ✅ Ensure only this member's tasks are displayed, 
-      // even if the API happens to return a global list.
+      // Match task.member_id with the logged-in team member's id
       const mine = (data.data || []).filter(
         (t: Task) => Number(t.member_id) === memberId
       );
@@ -126,6 +127,24 @@ const MyTasks = () => {
 
   useEffect(() => {
     fetchTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId]);
+
+  /* ---------- auto refresh: new tasks appear without clicking Refresh ---------- */
+  useEffect(() => {
+    if (!memberId) return;
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") fetchTasks(false);
+    }, AUTO_REFRESH_MS);
+
+    const onFocus = () => fetchTasks(false);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId]);
 
@@ -202,6 +221,11 @@ const MyTasks = () => {
           </h2>
           <p className="text-sm text-gray-500 mt-1">
             Tasks assigned to you across all your projects.
+            {member && (
+              <span className="ml-2 text-xs text-gray-400">
+                (Logged in as {member.name}, ID {memberId})
+              </span>
+            )}
           </p>
         </div>
 

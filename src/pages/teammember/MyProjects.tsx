@@ -35,6 +35,28 @@ type Project = {
 
 const PAGE_SIZE = 10;
 
+/** Parse "[21,19,16,18]" or [21,19,16,18] into numbers */
+const parseMemberIds = (raw: unknown): number[] => {
+  if (Array.isArray(raw)) return raw.map(Number).filter((n) => !isNaN(n));
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed))
+        return parsed.map(Number).filter((n) => !isNaN(n));
+    } catch {
+      /* fall through */
+    }
+    return trimmed
+      .replace(/[\[\]]/g, "")
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => !isNaN(n));
+  }
+  return [];
+};
+
 /* ---------------- Status style helpers ---------------- */
 const STATUS_STYLES: Record<string, string> = {
   ASSIGNED: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
@@ -70,14 +92,13 @@ const MyProjects = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | string>("all");
   const [page, setPage] = useState(1);
 
-  // ✅ FIX: Read logged-in team lead instead of team member
+  // Logged-in TEAM MEMBER
   const userRaw =
     typeof window !== "undefined"
-      ? localStorage.getItem("teamlead_user")
+      ? localStorage.getItem("teammember_user")
       : null;
   const user = userRaw ? JSON.parse(userRaw) : null;
-  const teamLeadId: number | null =
-    user?.id != null ? Number(user.id) : null;
+  const memberId: number | null = user?.id != null ? Number(user.id) : null;
 
   // ---------- Fetch projects ----------
   const fetchProjects = async () => {
@@ -94,10 +115,11 @@ const MyProjects = () => {
         throw new Error(data.message || "Failed to load projects");
       }
 
-      // ✅ FIX: Filter by teamlead_id
-      const mine = (data.data || []).filter((p: Project) => {
-        return teamLeadId !== null && Number(p.teamlead_id) === teamLeadId;
-      });
+      // Only projects where this team member is assigned
+      const mine = (data.data || []).filter(
+        (p: Project) =>
+          memberId !== null && parseMemberIds(p.member_ids).includes(memberId)
+      );
 
       setProjects(mine);
     } catch (err: any) {
@@ -110,7 +132,7 @@ const MyProjects = () => {
   useEffect(() => {
     fetchProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamLeadId]);
+  }, [memberId]);
 
   // ---------- Filter ----------
   const filtered = useMemo(() => {
@@ -130,17 +152,14 @@ const MyProjects = () => {
   );
 
   // ---------- Pagination ----------
-  // (kept above the early returns below so hooks always run in the same order)
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const startIndex = (page - 1) * PAGE_SIZE;
   const paginated = filtered.slice(startIndex, startIndex + PAGE_SIZE);
 
-  // Go back to page 1 whenever the status filter changes
   useEffect(() => {
     setPage(1);
   }, [statusFilter]);
 
-  // Keep page in range if the list shrinks
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
@@ -181,7 +200,7 @@ const MyProjects = () => {
             <FolderKanban size={22} /> My Projects
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Projects you are assigned to as a team lead.
+            Projects you are assigned to as a team member.
           </p>
         </div>
 
@@ -232,7 +251,7 @@ const MyProjects = () => {
             </p>
             <p className="text-xs">
               {projects.length === 0
-                ? "When an admin assigns you as a Team Lead, the project will appear here."
+                ? "When your team lead adds you to a project, it will appear here."
                 : "Try changing the status filter."}
             </p>
           </div>
@@ -262,7 +281,6 @@ const MyProjects = () => {
                             Customer: {p.customer_name}
                           </p>
                         )}
-                        {/* Team member avatars (all assigned) */}
                         {p.team_members?.length > 0 && (
                           <div className="flex items-center gap-1 mt-1.5">
                             {p.team_members.slice(0, 3).map((m) => (
@@ -335,7 +353,7 @@ const MyProjects = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            to={`/teamlead/projects/${p.id}`} // ✅ Adjusted link for team lead view
+                            to={`/teammember/projects/${p.id}`}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0c2d67] text-white hover:bg-[#0a2450] transition"
                             title="View project"
                           >
@@ -351,7 +369,7 @@ const MyProjects = () => {
           </div>
         )}
 
-        {/* ---------- Pagination controls ---------- */}
+        {/* Pagination controls */}
         {filtered.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
             <span>
@@ -386,7 +404,7 @@ const MyProjects = () => {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Users size={12} />
-              Logged in as {user?.name ?? "Team Lead"}
+              Logged in as {user?.name ?? "Team Member"}
             </span>
           </div>
         )}
